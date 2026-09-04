@@ -1,0 +1,108 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: 'Public Sans', system-ui, -apple-system, sans-serif;
+
+  --color-primary: #012d1d;
+  --color-primary-container: #1b4332;
+  --color-on-primary: #ffffff;
+  --color-primary-fixed: #c1ecd4;
+  --color-primary-fixed-dim: #a5d0b9;
+  --color-on-primary-fixed: #002114;
+  --color-on-primary-fixed-variant: #274e3d;
+  --color-on-primary-container: #86af99;
+
+  --color-secondary: #006c48;
+  --color-secondary-container: #92f7c3;
+  --color-on-secondary: #ffffff;
+  --color-secondary-fixed: #92f7c3;
+  --color-secondary-fixed-dim: #75daa8;
+  --color-on-secondary-fixed: #002113;
+  --color-on-secondary-fixed-variant: #005235;
+  --color-on-secondary-container: #00734d;
+
+  --color-tertiary: #3e1e00;
+  --color-tertiary-container: #5e3000;
+  --color-tertiary-fixed: #ffdcc3;
+  --color-tertiary-fixed-dim: #ffb77d;
+  --color-on-tertiary: #ffffff;
+  --color-on-tertiary-fixed: #2f1500;
+  --color-on-tertiary-fixed-variant: #6e3900;
+  --color-on-tertiary-container: #f48c24;
+
+  --color-surface: #f7f9ff;
+  --color-on-surface: #181c20;
+  --color-on-surface-variant: #414844;
+  --color-surface-bright: #f7f9ff;
+  --color-surface-dim: #d7dadf;
+  --color-surface-variant: #e0e3e8;
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-container-low: #f1f4f9;
+  --color-surface-container: #ebeef3;
+  --color-surface-container-high: #e5e8ee;
+  --color-surface-container-highest: #e0e3e8;
+  --color-inverse-surface: #2d3135;
+  --color-inverse-on-surface: #eef1f6;
+  --color-inverse-primary: #a5d0b9;
+
+  --color-outline: #717973;
+  --color-outline-variant: #c1c8c2;
+  --color-error: #ba1a1a;
+  --color-on-error: #ffffff;
+  --color-error-container: #ffdad6;
+  --color-on-error-container: #93000a;
+  --color-background: #f7f9ff;
+  --color-on-background: #181c20;
+
+  --radius-card: 1rem;
+  --radius-pill: 6.125rem;
+}
+
+@layer utilities {
+  .px-pad-screen-horizontal {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+  .p-pad-card {
+    padding: 1rem;
+  }
+  .h-touch-target-min {
+    height: 3rem;
+  }
+  .w-touch-target-min {
+    width: 3rem;
+  }
+  .rounded-radius-card {
+    border-radius: 1rem;
+  }
+  .pt-safe {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+  .scrollbar-none {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+.material-symbols-outlined {
+  font-family: 'Material Symbols Outlined';
+  font-weight: normal;
+  font-style: normal;
+  font-size: 24px;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  -webkit-font-feature-settings: 'liga';
+  -webkit-font-smoothing: antialiased;
+}
+

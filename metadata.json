@@ -1,0 +1,6 @@
+{
+  "name": "AgriSurvey",
+  "description": "Offline-first agricultural field survey, cadastral GIS mapping, and agronomic audit application for field inspectors.",
+  "requestFramePermissions": ["geolocation"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
