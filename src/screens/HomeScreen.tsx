@@ -22,30 +22,6 @@ export default function HomeScreen({ navigation }: any) {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      {/* Inspector Profile */}
-      <View style={styles.profileCard}>
-        <View style={styles.profileHeader}>
-          <Image 
-            source={{ uri: 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&q=80&w=300&h=300' }} 
-            style={styles.avatar} 
-          />
-          <View style={styles.profileInfo}>
-            <Text style={styles.roleText}>Field Inspector</Text>
-            <Text style={styles.nameText}>Field Inspector</Text>
-            <View style={styles.locationRow}>
-              <Ionicons name="location" size={14} color={theme.colors.primary} />
-              <Text style={styles.locationText}>Mandya District, Block 4</Text>
-            </View>
-          </View>
-        </View>
-        <View style={styles.syncStatusRow}>
-          <Text style={styles.syncText}>{farmers.length + farms.length + parcels.length + surveys.length} Records Synced</Text>
-          <View style={styles.readyBadge}>
-            <Ionicons name="cloud-done" size={14} color={theme.colors.secondary} />
-            <Text style={styles.readyText}> Ready</Text>
-          </View>
-        </View>
-      </View>
 
       {/* Quick Actions */}
       <View style={styles.actionGrid}>
