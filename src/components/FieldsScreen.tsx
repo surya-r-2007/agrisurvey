@@ -44,18 +44,50 @@ export const FieldsScreen: React.FC<FieldsScreenProps> = ({
   const [selectedSoilPin, setSelectedSoilPin] = useState<{ id: string; depth: string; ec: string; ph: string } | null>(null);
 
   const simulateGpsCapture = () => {
-    // Generate slight realistic jitter around coordinates
-    const newLat = (12.584219 + (Math.random() - 0.5) * 0.00005).toFixed(6);
-    const newLng = (77.042831 + (Math.random() - 0.5) * 0.00005).toFixed(6);
-    const newAlt = (662.4 + (Math.random() - 0.5) * 0.4).toFixed(1);
+    if ('geolocation' in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const newLat = pos.coords.latitude.toFixed(6);
+          const newLng = pos.coords.longitude.toFixed(6);
+          const newAlt = pos.coords.altitude ? pos.coords.altitude.toFixed(1) : altitude;
 
-    setLat(newLat);
-    setLng(newLng);
-    setAltitude(newAlt);
-    setCapturedPointsCount((prev) => prev + 1);
-    setShowGpsSuccess(true);
-    setTimeout(() => setShowGpsSuccess(false), 3000);
-    onShowToast(`Point logged! Vertex #${capturedPointsCount + 1} added to boundary buffer.`);
+          setLat(newLat);
+          setLng(newLng);
+          setAltitude(newAlt);
+          setCapturedPointsCount((prev) => prev + 1);
+          setShowGpsSuccess(true);
+          setTimeout(() => setShowGpsSuccess(false), 3000);
+          onShowToast(`Live GPS point captured! Lat: ${newLat}°, Lng: ${newLng}° (±${pos.coords.accuracy?.toFixed(1) || '1.2'}m)`);
+        },
+        () => {
+          // Fallback simulation if permission is denied
+          const newLat = (12.584219 + (Math.random() - 0.5) * 0.00005).toFixed(6);
+          const newLng = (77.042831 + (Math.random() - 0.5) * 0.00005).toFixed(6);
+          const newAlt = (662.4 + (Math.random() - 0.5) * 0.4).toFixed(1);
+
+          setLat(newLat);
+          setLng(newLng);
+          setAltitude(newAlt);
+          setCapturedPointsCount((prev) => prev + 1);
+          setShowGpsSuccess(true);
+          setTimeout(() => setShowGpsSuccess(false), 3000);
+          onShowToast(`Point logged! Vertex #${capturedPointsCount + 1} added to boundary buffer.`);
+        },
+        { enableHighAccuracy: true }
+      );
+    } else {
+      const newLat = (12.584219 + (Math.random() - 0.5) * 0.00005).toFixed(6);
+      const newLng = (77.042831 + (Math.random() - 0.5) * 0.00005).toFixed(6);
+      const newAlt = (662.4 + (Math.random() - 0.5) * 0.4).toFixed(1);
+
+      setLat(newLat);
+      setLng(newLng);
+      setAltitude(newAlt);
+      setCapturedPointsCount((prev) => prev + 1);
+      setShowGpsSuccess(true);
+      setTimeout(() => setShowGpsSuccess(false), 3000);
+      onShowToast(`Point logged! Vertex #${capturedPointsCount + 1} added to boundary buffer.`);
+    }
   };
 
   const parcel: FieldParcel = activeParcel || {
