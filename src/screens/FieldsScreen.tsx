@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Dimensions, FlatList, TouchableOpacity } from 'react-native';
-import MapView, { Polygon, Marker } from 'react-native-maps';
+import MapView, { Marker, Circle } from 'react-native-maps';
 import { Ionicons } from '@expo/vector-icons';
+import * as Location from 'expo-location';
 import { theme } from '../theme';
 import { useStore } from '../store/useStore';
 import { FieldParcel } from '../types';
@@ -10,13 +11,59 @@ export default function FieldsScreen() {
   const { parcels } = useStore();
   const [selectedParcel, setSelectedParcel] = useState<FieldParcel | null>(parcels[0] || null);
 
-  // Example coordinates for the map (around Mandya)
-  const initialRegion = {
+  const [location, setLocation] = useState<Location.LocationObject | null>(null);
+  const [region, setRegion] = useState({
     latitude: 12.5239,
     longitude: 76.8951,
-    latitudeDelta: 0.0922,
-    longitudeDelta: 0.0421,
+    latitudeDelta: 0.0422,
+    longitudeDelta: 0.0221,
+  });
+
+  const getLiveLocation = async () => {
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        return;
+      }
+
+      const currentLocation = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.High,
+      });
+      setLocation(currentLocation);
+      setRegion({
+        latitude: currentLocation.coords.latitude,
+        longitude: currentLocation.coords.longitude,
+        latitudeDelta: 0.015,
+        longitudeDelta: 0.015,
+      });
+    } catch (err: any) {
+      // Fallback
+    }
   };
+
+  useEffect(() => {
+    getLiveLocation();
+    let subscription: Location.LocationSubscription | null = null;
+    (async () => {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status === 'granted') {
+        subscription = await Location.watchPositionAsync(
+          {
+            accuracy: Location.Accuracy.High,
+            timeInterval: 3000,
+            distanceInterval: 5,
+          },
+          (newLocation) => {
+            setLocation(newLocation);
+          }
+        );
+      }
+    })();
+
+    return () => {
+      if (subscription) subscription.remove();
+    };
+  }, []);
 
   const renderParcelItem = ({ item }: { item: FieldParcel }) => (
     <TouchableOpacity
@@ -39,22 +86,55 @@ export default function FieldsScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.mapContainer}>
-        <MapView style={styles.map} initialRegion={initialRegion}>
-          {/* Real implementation would map parcel coordinates here */}
-          {selectedParcel && (
-            <Marker coordinate={{ latitude: initialRegion.latitude, longitude: initialRegion.longitude }}>
-              <View style={styles.markerContainer}>
-                <Ionicons name="location" size={32} color={theme.colors.primary} />
-              </View>
-            </Marker>
+        <MapView 
+          style={styles.map} 
+          region={region}
+          showsUserLocation={true}
+          showsMyLocationButton={true}
+          showsCompass={true}
+        >
+          {location && (
+            <>
+              <Marker 
+                coordinate={{
+                  latitude: location.coords.latitude,
+                  longitude: location.coords.longitude
+                }}
+                title="Live Device Location"
+                description={`Accuracy: ±${location.coords.accuracy?.toFixed(1) || '1.0'}m`}
+              >
+                <View style={styles.liveMarker}>
+                  <Ionicons name="navigate-circle" size={32} color={theme.colors.secondary} />
+                </View>
+              </Marker>
+              <Circle
+                center={{
+                  latitude: location.coords.latitude,
+                  longitude: location.coords.longitude
+                }}
+                radius={location.coords.accuracy || 10}
+                fillColor="rgba(0, 108, 72, 0.15)"
+                strokeColor={theme.colors.secondary}
+              />
+            </>
           )}
         </MapView>
+
+        {/* Live GPS Overlay Header */}
         <View style={styles.mapOverlay}>
-          <View style={styles.gpsBadge}>
-            <Ionicons name="earth" size={16} color={theme.colors.secondary} />
-            <Text style={styles.gpsText}> GPS RTK: ±1.2m</Text>
-          </View>
+          <TouchableOpacity style={styles.gpsBadge} onPress={getLiveLocation}>
+            <Ionicons name="radio" size={16} color={theme.colors.secondary} />
+            <Text style={styles.gpsText}>
+              {location 
+                ? ` LIVE GPS: ${location.coords.latitude.toFixed(4)}°, ${location.coords.longitude.toFixed(4)}° (±${location.coords.accuracy?.toFixed(1)}m)`
+                : ' Fetching Live GPS...'}
+            </Text>
+          </TouchableOpacity>
         </View>
+
+        <TouchableOpacity style={styles.locateBtn} onPress={getLiveLocation}>
+          <Ionicons name="locate" size={22} color={theme.colors.primary} />
+        </TouchableOpacity>
       </View>
 
       <View style={styles.listContainer}>
@@ -82,8 +162,10 @@ export default function FieldsScreen() {
               <Text style={styles.detailValue}>{selectedParcel.waterSource}</Text>
             </View>
             <View style={styles.detailBox}>
-              <Text style={styles.detailLabel}>Soil Compaction</Text>
-              <Text style={styles.detailValue}>{selectedParcel.erosionRisk}</Text>
+              <Text style={styles.detailLabel}>Live GPS Accuracy</Text>
+              <Text style={styles.detailValue}>
+                {location ? `±${location.coords.accuracy?.toFixed(1)}m` : selectedParcel.gpsAccuracy}
+              </Text>
             </View>
             <View style={styles.detailBox}>
               <Text style={styles.detailLabel}>Drainage</Text>
@@ -102,10 +184,11 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background },
   mapContainer: { height: height * 0.4, width: '100%', position: 'relative' },
   map: { flex: 1 },
-  markerContainer: { alignItems: 'center', justifyContent: 'center' },
-  mapOverlay: { position: 'absolute', top: 16, right: 16 },
-  gpsBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#E0F2E9', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, elevation: 3 },
+  liveMarker: { alignItems: 'center', justifyContent: 'center' },
+  mapOverlay: { position: 'absolute', top: 16, left: 16, right: 16, alignItems: 'center' },
+  gpsBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#E0F2E9', paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, elevation: 4 },
   gpsText: { fontSize: 12, fontWeight: 'bold', color: theme.colors.secondary },
+  locateBtn: { position: 'absolute', bottom: 16, right: 16, backgroundColor: '#FFF', width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', elevation: 4 },
   listContainer: { paddingVertical: theme.spacing.m, backgroundColor: theme.colors.surface },
   sectionTitle: { fontSize: 16, fontWeight: 'bold', marginHorizontal: theme.spacing.m, marginBottom: theme.spacing.s, color: theme.colors.text },
   list: { paddingHorizontal: theme.spacing.m },
