@@ -26,16 +26,24 @@ export default function FieldsScreen() {
         return;
       }
 
-      const currentLocation = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.High,
-      });
-      setLocation(currentLocation);
-      setRegion({
-        latitude: currentLocation.coords.latitude,
-        longitude: currentLocation.coords.longitude,
-        latitudeDelta: 0.015,
-        longitudeDelta: 0.015,
-      });
+      let currentLocation: Location.LocationObject | null = null;
+      try {
+        currentLocation = await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.Balanced,
+        });
+      } catch (e) {
+        currentLocation = await Location.getLastKnownPositionAsync({});
+      }
+
+      if (currentLocation) {
+        setLocation(currentLocation);
+        setRegion({
+          latitude: currentLocation.coords.latitude,
+          longitude: currentLocation.coords.longitude,
+          latitudeDelta: 0.015,
+          longitudeDelta: 0.015,
+        });
+      }
     } catch (err: any) {
       // Fallback
     }
