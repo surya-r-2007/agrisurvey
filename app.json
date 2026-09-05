@@ -13,15 +13,11 @@
       "package": "com.suryar.agrisurvey",
       "permissions": [
         "ACCESS_COARSE_LOCATION",
-        "ACCESS_FINE_LOCATION",
-        "ACCESS_BACKGROUND_LOCATION",
-        "FOREGROUND_SERVICE"
+        "ACCESS_FINE_LOCATION"
       ],
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/android-icon-foreground.png",
-        "backgroundImage": "./assets/android-icon-background.png",
-        "monochromeImage": "./assets/android-icon-monochrome.png"
+        "foregroundImage": "./assets/icon.png",
+        "backgroundColor": "#E6F4FE"
       },
       "predictiveBackGestureEnabled": false
     },
@@ -38,6 +34,7 @@
       [
         "expo-location",
         {
+          "locationWhenInUsePermission": "AgriSurvey needs your location to map field parcels and audit crop coordinates.",
           "locationAlwaysAndWhenInUsePermission": "AgriSurvey needs your location to map field parcels and audit crop coordinates."
         }
       ]

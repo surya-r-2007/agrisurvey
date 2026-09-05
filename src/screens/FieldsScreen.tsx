@@ -9,9 +9,9 @@ import {
   Alert,
   Modal,
   TextInput,
-  ScrollView
+  ScrollView,
+  ActivityIndicator
 } from 'react-native';
-import MapView, { Marker, Circle } from 'react-native-maps';
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import { theme } from '../theme';
@@ -21,14 +21,7 @@ import { FieldParcel } from '../types';
 export default function FieldsScreen() {
   const { parcels, addParcel } = useStore();
   const [selectedParcel, setSelectedParcel] = useState<FieldParcel | null>(parcels[0] || null);
-
   const [location, setLocation] = useState<Location.LocationObject | null>(null);
-  const [region, setRegion] = useState({
-    latitude: 12.5239,
-    longitude: 76.8951,
-    latitudeDelta: 0.0422,
-    longitudeDelta: 0.0221,
-  });
 
   // Modal State for Add Field Parcel
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -45,7 +38,7 @@ export default function FieldsScreen() {
       if (!isEnabled) {
         Alert.alert(
           'Location Services Disabled',
-          'Please enable Location / GPS services on your mobile device to view your position on the map.'
+          'Please enable Location / GPS services on your mobile device.'
         );
         return;
       }
@@ -54,7 +47,7 @@ export default function FieldsScreen() {
       if (status !== 'granted') {
         Alert.alert(
           'Permission Denied',
-          'Location permission was denied. Please allow location access in your phone settings.'
+          'Location permission was denied. Please allow location access in settings.'
         );
         return;
       }
@@ -70,12 +63,10 @@ export default function FieldsScreen() {
 
       if (currentLocation) {
         setLocation(currentLocation);
-        setRegion({
-          latitude: currentLocation.coords.latitude,
-          longitude: currentLocation.coords.longitude,
-          latitudeDelta: 0.015,
-          longitudeDelta: 0.015,
-        });
+        Alert.alert(
+          'Live GPS Captured',
+          `Latitude: ${currentLocation.coords.latitude.toFixed(6)}° N\nLongitude: ${currentLocation.coords.longitude.toFixed(6)}° E\nAccuracy: ±${currentLocation.coords.accuracy?.toFixed(1) || '1.0'}m`
+        );
       }
     } catch (err: any) {
       Alert.alert('Location Error', err?.message || 'Failed to obtain live location.');
@@ -84,8 +75,6 @@ export default function FieldsScreen() {
 
   useEffect(() => {
     let isMounted = true;
-    let subscription: Location.LocationSubscription | null = null;
-
     const initLocation = async () => {
       try {
         const { status } = await Location.requestForegroundPermissionsAsync();
@@ -93,36 +82,15 @@ export default function FieldsScreen() {
           const loc = await Location.getLastKnownPositionAsync({});
           if (loc && isMounted) {
             setLocation(loc);
-            setRegion({
-              latitude: loc.coords.latitude,
-              longitude: loc.coords.longitude,
-              latitudeDelta: 0.015,
-              longitudeDelta: 0.015,
-            });
           }
-          subscription = await Location.watchPositionAsync(
-            {
-              accuracy: Location.Accuracy.Balanced,
-              timeInterval: 5000,
-              distanceInterval: 10,
-            },
-            (newLocation) => {
-              if (isMounted) {
-                setLocation(newLocation);
-              }
-            }
-          );
         }
       } catch (e) {
         // Safe non-blocking catch
       }
     };
-
     initLocation();
-
     return () => {
       isMounted = false;
-      if (subscription) subscription.remove();
     };
   }, []);
 
@@ -192,7 +160,7 @@ export default function FieldsScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Header bar with Add Field button */}
+      {/* Header Bar */}
       <View style={styles.headerBar}>
         <Text style={styles.headerTitle}>Fields & GIS Mapping</Text>
         <TouchableOpacity style={styles.addBtnHeader} onPress={() => setIsModalOpen(true)}>
@@ -201,49 +169,38 @@ export default function FieldsScreen() {
         </TouchableOpacity>
       </View>
 
-      <View style={styles.mapContainer}>
-        <MapView 
-          style={styles.map} 
-          region={region}
-          showsUserLocation={true}
-          showsMyLocationButton={true}
-          showsCompass={true}
-        >
-          {location && (
-            <>
-              <Marker 
-                coordinate={{
-                  latitude: location.coords.latitude,
-                  longitude: location.coords.longitude
-                }}
-                title="Live Device Location"
-                description={`Accuracy: ±${location.coords.accuracy?.toFixed(1) || '1.0'}m`}
-              >
-                <View style={styles.liveMarker}>
-                  <Ionicons name="navigate-circle" size={32} color={theme.colors.secondary} />
-                </View>
-              </Marker>
-              <Circle
-                center={{
-                  latitude: location.coords.latitude,
-                  longitude: location.coords.longitude
-                }}
-                radius={location.coords.accuracy || 10}
-                fillColor="rgba(0, 108, 72, 0.15)"
-                strokeColor={theme.colors.secondary}
-              />
-            </>
-          )}
-        </MapView>
+      {/* GIS Field Map Container */}
+      <View style={styles.gisContainer}>
+        <View style={styles.gisMapCanvas}>
+          <View style={styles.gisGridLineH1} />
+          <View style={styles.gisGridLineH2} />
+          <View style={styles.gisGridLineV1} />
+          <View style={styles.gisGridLineV2} />
 
-        {/* Live GPS Overlay Header */}
+          {/* Active Field Boundary Display */}
+          <View style={styles.fieldBoundaryBox}>
+            <Ionicons name="location-sharp" size={28} color={theme.colors.secondary} />
+            <Text style={styles.fieldBoundaryTitle}>{selectedParcel ? selectedParcel.name : 'Sector #1 Plot'}</Text>
+            <Text style={styles.fieldBoundaryMeta}>
+              {selectedParcel ? `${selectedParcel.crop} • ${selectedParcel.hectares} ha` : 'Sugarcane • 2.5 ha'}
+            </Text>
+          </View>
+
+          {/* Live Device Location Pin */}
+          <View style={styles.devicePinContainer}>
+            <View style={styles.devicePinPulse} />
+            <Ionicons name="navigate-circle" size={32} color={theme.colors.primary} />
+          </View>
+        </View>
+
+        {/* Live GPS Telemetry Badge */}
         <View style={styles.mapOverlay}>
           <TouchableOpacity style={styles.gpsBadge} onPress={getLiveLocation}>
             <Ionicons name="radio" size={16} color={theme.colors.secondary} />
             <Text style={styles.gpsText}>
               {location 
                 ? ` LIVE GPS: ${location.coords.latitude.toFixed(4)}°, ${location.coords.longitude.toFixed(4)}° (±${location.coords.accuracy?.toFixed(1)}m)`
-                : ' Tap to Fetch GPS'}
+                : ' Tap to Capture GPS'}
             </Text>
           </TouchableOpacity>
         </View>
@@ -253,6 +210,7 @@ export default function FieldsScreen() {
         </TouchableOpacity>
       </View>
 
+      {/* Parcel List */}
       <View style={styles.listContainer}>
         <View style={styles.listHeaderRow}>
           <Text style={styles.sectionTitle}>Mapped Parcels ({parcels.length})</Text>
@@ -278,7 +236,8 @@ export default function FieldsScreen() {
           />
         )}
       </View>
-      
+
+      {/* Parcel Details */}
       {selectedParcel && (
         <View style={styles.detailsContainer}>
           <Text style={styles.sectionTitle}>Parcel Details: {selectedParcel.id}</Text>
@@ -409,9 +368,17 @@ const styles = StyleSheet.create({
     borderRadius: 16
   },
   addBtnText: { color: '#FFF', fontSize: 13, fontWeight: 'bold', marginLeft: 4 },
-  mapContainer: { height: height * 0.35, width: '100%', position: 'relative' },
-  map: { flex: 1 },
-  liveMarker: { alignItems: 'center', justifyContent: 'center' },
+  gisContainer: { height: height * 0.35, width: '100%', position: 'relative', backgroundColor: '#C8E6C9' },
+  gisMapCanvas: { flex: 1, backgroundColor: '#DCEDC8', justifyContent: 'center', alignItems: 'center', position: 'relative' },
+  gisGridLineH1: { position: 'absolute', top: '33%', left: 0, right: 0, height: 1, backgroundColor: 'rgba(0, 108, 72, 0.15)' },
+  gisGridLineH2: { position: 'absolute', top: '66%', left: 0, right: 0, height: 1, backgroundColor: 'rgba(0, 108, 72, 0.15)' },
+  gisGridLineV1: { position: 'absolute', left: '33%', top: 0, bottom: 0, width: 1, backgroundColor: 'rgba(0, 108, 72, 0.15)' },
+  gisGridLineV2: { position: 'absolute', left: '66%', top: 0, bottom: 0, width: 1, backgroundColor: 'rgba(0, 108, 72, 0.15)' },
+  fieldBoundaryBox: { backgroundColor: theme.colors.surface, paddingHorizontal: 16, paddingVertical: 12, borderRadius: 16, alignItems: 'center', elevation: 4, borderWidth: 2, borderColor: theme.colors.primary },
+  fieldBoundaryTitle: { fontSize: 15, fontWeight: 'bold', color: theme.colors.primary, marginTop: 4 },
+  fieldBoundaryMeta: { fontSize: 12, color: theme.colors.textSecondary, marginTop: 2 },
+  devicePinContainer: { position: 'absolute', bottom: 20, left: 20, alignItems: 'center', justifyContent: 'center' },
+  devicePinPulse: { position: 'absolute', width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(0, 108, 72, 0.2)' },
   mapOverlay: { position: 'absolute', top: 12, left: 12, right: 12, alignItems: 'center' },
   gpsBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#E0F2E9', paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, elevation: 4 },
   gpsText: { fontSize: 12, fontWeight: 'bold', color: theme.colors.secondary },
