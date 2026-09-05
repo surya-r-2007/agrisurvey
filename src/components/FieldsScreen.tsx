@@ -173,6 +173,26 @@ export const FieldsScreen: React.FC<FieldsScreenProps> = ({
     );
   }
 
+  React.useEffect(() => {
+    if ('geolocation' in navigator) {
+      const watchId = navigator.geolocation.watchPosition(
+        (pos) => {
+          setLat(pos.coords.latitude.toFixed(6));
+          setLng(pos.coords.longitude.toFixed(6));
+          if (pos.coords.altitude) setAltitude(pos.coords.altitude.toFixed(1));
+        },
+        () => {},
+        { enableHighAccuracy: true, maximumAge: 5000 }
+      );
+      return () => navigator.geolocation.clearWatch(watchId);
+    }
+  }, []);
+
+  const numLat = parseFloat(lat) || 12.584219;
+  const numLng = parseFloat(lng) || 77.042831;
+  const bbox = `${(numLng - 0.01).toFixed(6)}%2C${(numLat - 0.01).toFixed(6)}%2C${(numLng + 0.01).toFixed(6)}%2C${(numLat + 0.01).toFixed(6)}`;
+  const osmMapUrl = `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${numLat}%2C${numLng}`;
+
   return (
     <div className="flex flex-col w-full space-y-4 max-w-2xl mx-auto pb-16">
       {/* Parcel Selection Carousel / Switcher */}
@@ -362,12 +382,15 @@ export const FieldsScreen: React.FC<FieldsScreenProps> = ({
         </div>
       </div>
 
-      {/* Interactive Map Display Preview Container */}
+      {/* Interactive Live OpenStreetMap Display Container */}
       <div className="relative w-full rounded-2xl overflow-hidden bg-surface-container-high shadow-md border border-outline-variant/20">
-        <div
-          className="w-full h-84 bg-cover bg-center relative"
-          style={{ backgroundImage: `url('${APP_ASSETS.mapBackground}')` }}
-        >
+        <div className="w-full h-84 relative bg-surface-container-lowest">
+          {/* Real Live OpenStreetMap Frame */}
+          <iframe
+            title="Live GPS OpenStreetMap"
+            className="w-full h-full border-0 pointer-events-auto"
+            src={osmMapUrl}
+          />
           {/* Topographic Graphic Layer Overlay (SVG Polygon & Spatial Assets) */}
           <svg className="absolute inset-0 w-full h-full pointer-events-none" preserveAspectRatio="none" viewBox="0 0 380 320">
             {/* Field Polygon Boundary */}
