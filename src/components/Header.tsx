@@ -100,14 +100,6 @@ export const Header: React.FC<HeaderProps> = ({
               </button>
             </>
           )}
-
-          <button
-            onClick={onOpenInspector}
-            aria-label="Inspector Profile"
-            className="w-8 h-8 rounded-full bg-primary flex items-center justify-center flex-shrink-0 ml-1 hover:ring-2 hover:ring-secondary transition-all cursor-pointer"
-          >
-            <span className="material-symbols-outlined text-on-primary text-[18px]">person</span>
-          </button>
         </div>
       </div>
     </header>
