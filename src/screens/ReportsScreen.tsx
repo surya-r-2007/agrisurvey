@@ -82,7 +82,7 @@ export default function ReportsScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background },
-  content: { padding: theme.spacing.m, paddingBottom: 80 },
+  content: { padding: theme.spacing.m, paddingBottom: 130 },
   header: { flexDirection: 'row', alignItems: 'center', marginBottom: theme.spacing.l },
   headerTitle: { fontSize: 22, fontWeight: 'bold', color: theme.colors.text, marginLeft: 8 },
   card: { backgroundColor: theme.colors.surface, borderRadius: theme.borderRadius.l, padding: theme.spacing.m, marginBottom: theme.spacing.l, elevation: 1 },

@@ -82,7 +82,7 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: theme.spacing.m,
-    paddingBottom: 100,
+    paddingBottom: 130,
   },
   profileCard: {
     backgroundColor: theme.colors.surface,
