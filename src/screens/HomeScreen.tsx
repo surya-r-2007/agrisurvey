@@ -31,7 +31,7 @@ export default function HomeScreen({ navigation }: any) {
           />
           <View style={styles.profileInfo}>
             <Text style={styles.roleText}>Field Inspector</Text>
-            <Text style={styles.nameText}>Dr. Rajesh Sharma</Text>
+            <Text style={styles.nameText}>Field Inspector</Text>
             <View style={styles.locationRow}>
               <Ionicons name="location" size={14} color={theme.colors.primary} />
               <Text style={styles.locationText}>Mandya District, Block 4</Text>
