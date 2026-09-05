@@ -66,56 +66,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
 
   return (
     <div className="flex flex-col w-full space-y-5 max-w-2xl mx-auto">
-      {/* Top Greeting & Inspector Identity Card */}
-      <section className="bg-surface-container-lowest rounded-radius-card p-pad-card shadow-sm flex flex-col gap-3 relative overflow-hidden border border-outline-variant/15">
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="relative flex-shrink-0">
-              <img
-                className="w-12 h-12 rounded-full object-cover shadow-sm ring-2 ring-secondary/20"
-                alt="Field Inspector"
-                src={APP_ASSETS.inspector}
-              />
-              <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-secondary rounded-full flex items-center justify-center ring-2 ring-white">
-                <span className="w-1.5 h-1.5 rounded-full bg-surface-container-lowest"></span>
-              </div>
-            </div>
-            <div className="flex flex-col min-w-0">
-              <span className="text-[11px] text-secondary uppercase tracking-wider font-bold">
-                Field Inspector
-              </span>
-              <h2 className="text-[20px] font-bold text-on-surface truncate leading-tight">
-                {inspectorName}
-              </h2>
-              <div className="flex items-center gap-1 text-on-surface-variant mt-0.5">
-                <span className="material-symbols-outlined text-[16px] text-primary">location_on</span>
-                <span className="text-[13px] truncate">Mandya District, Block 4</span>
-              </div>
-            </div>
-          </div>
-          <div className="flex flex-col items-end flex-shrink-0 bg-surface-container-low px-2.5 py-1.5 rounded-lg border border-outline-variant/20">
-            <div className="flex items-center gap-1.5">
-              <span className="material-symbols-outlined text-secondary text-[16px]">database</span>
-              <span className="text-[11px] text-secondary font-bold">SQLite v3</span>
-            </div>
-            <span className="text-on-surface-variant text-[11px] mt-0.5">Local Storage</span>
-          </div>
-        </div>
-
-        {/* Storage and Local DB Synchronizer Banner */}
-        <div className="bg-surface-container-low rounded-lg p-2.5 flex items-center justify-between gap-2 border border-outline-variant/10">
-          <div className="flex items-center gap-2 min-w-0">
-            <span className="w-2 h-2 rounded-full bg-secondary flex-shrink-0"></span>
-            <span className="text-[13px] text-on-surface-variant truncate">
-              <strong className="font-semibold text-on-surface">{totalRecords} Records</strong> Synced locally
-            </span>
-          </div>
-          <div className="flex items-center gap-1 bg-surface-container-highest px-2 py-0.5 rounded text-on-surface text-[11px] font-semibold flex-shrink-0">
-            <span className="material-symbols-outlined text-[13px] text-secondary">sync_saved_locally</span>
-            <span>Ready</span>
-          </div>
-        </div>
-      </section>
 
       {/* High Tactile Tactical Action Buttons (2x2 Grid) */}
       <section aria-label="Field Quick Actions" className="grid grid-cols-2 gap-2.5">
