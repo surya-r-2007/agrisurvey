@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "agrisurvey-mobile",
+    "name": "Agricultural Survey",
     "slug": "agrisurvey-mobile",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -10,6 +10,7 @@
       "supportsTablet": true
     },
     "android": {
+      "package": "com.suryar.agrisurvey",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -20,6 +21,14 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "f0762d3e-4d47-4827-9d1a-0112d2e804c0"
+      }
+    },
+    "plugins": [
+      "expo-font"
+    ]
   }
 }
