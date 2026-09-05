@@ -28,6 +28,7 @@ export default function App() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [globalSearchQuery, setGlobalSearchQuery] = useState('');
   const [isInspectorProfileOpen, setIsInspectorProfileOpen] = useState(false);
+  const [inspectorName, setInspectorName] = useState('Field Inspector');
 
   // Toast System
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -123,6 +124,7 @@ export default function App() {
             onShowToast={showToast}
             parcels={parcels}
             surveys={surveys}
+            inspectorName={inspectorName}
           />
         )}
 
@@ -337,25 +339,43 @@ export default function App() {
           >
             <div className="flex items-center justify-between pb-2 border-b border-outline-variant/20">
               <div className="flex items-center gap-3">
-                <img
-                  src={APP_ASSETS.inspector}
-                  alt="Inspector Dr. Rajesh Sharma"
-                  className="w-12 h-12 rounded-full object-cover ring-2 ring-secondary/30 shadow-sm"
-                />
+                <div className="w-12 h-12 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-lg ring-2 ring-secondary/30 shadow-sm">
+                  <span className="material-symbols-outlined text-[24px]">person</span>
+                </div>
                 <div>
                   <h3 className="text-[17px] font-bold text-on-surface leading-tight">
-                    Dr. Rajesh Sharma
+                    {inspectorName}
                   </h3>
                   <span className="text-[12px] text-secondary font-bold">
-                    Senior Cadastral Agronomist
+                    Field Inspector / Agronomist
                   </span>
                 </div>
               </div>
               <button
                 onClick={() => setIsInspectorProfileOpen(false)}
-                className="w-8 h-8 flex items-center justify-center rounded-full bg-surface-container text-on-surface-variant"
+                className="w-8 h-8 flex items-center justify-center rounded-full bg-surface-container text-on-surface-variant cursor-pointer"
               >
                 <span className="material-symbols-outlined text-[18px]">close</span>
+              </button>
+            </div>
+
+            {/* Editable Inspector Name Row */}
+            <div className="flex items-center gap-2 bg-surface-container-low p-2 rounded-xl border border-outline-variant/20">
+              <input
+                type="text"
+                value={inspectorName}
+                onChange={(e) => setInspectorName(e.target.value)}
+                placeholder="Enter Inspector Name..."
+                className="flex-1 bg-transparent text-[13px] font-semibold text-on-surface outline-none px-2"
+              />
+              <button
+                onClick={() => {
+                  setInspectorName('Field Inspector');
+                  showToast('Inspector name reset to default');
+                }}
+                className="text-[11px] font-bold text-primary hover:underline px-1 cursor-pointer"
+              >
+                Reset
               </button>
             </div>
 

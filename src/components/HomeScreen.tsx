@@ -12,6 +12,7 @@ interface HomeScreenProps {
   surveys: SurveyRecord[];
   farmers?: Farmer[];
   farms?: Farm[];
+  inspectorName?: string;
 }
 
 export const HomeScreen: React.FC<HomeScreenProps> = ({
@@ -23,7 +24,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   parcels,
   surveys,
   farmers = [],
-  farms = []
+  farms = [],
+  inspectorName = 'Field Inspector'
 }) => {
   const [activeFilter, setActiveFilter] = useState<'all' | 'drafts' | 'today' | 'flagged'>('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -71,7 +73,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             <div className="relative flex-shrink-0">
               <img
                 className="w-12 h-12 rounded-full object-cover shadow-sm ring-2 ring-secondary/20"
-                alt="Field Inspector Dr. Rajesh Sharma"
+                alt="Field Inspector"
                 src={APP_ASSETS.inspector}
               />
               <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-secondary rounded-full flex items-center justify-center ring-2 ring-white">
@@ -83,7 +85,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                 Field Inspector
               </span>
               <h2 className="text-[20px] font-bold text-on-surface truncate leading-tight">
-                Dr. Rajesh Sharma
+                {inspectorName}
               </h2>
               <div className="flex items-center gap-1 text-on-surface-variant mt-0.5">
                 <span className="material-symbols-outlined text-[16px] text-primary">location_on</span>
