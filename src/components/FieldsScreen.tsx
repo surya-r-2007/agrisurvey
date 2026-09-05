@@ -624,15 +624,25 @@ export const FieldsScreen: React.FC<FieldsScreenProps> = ({
           </span>
         </div>
 
-        {/* Live Readout Box */}
-        <div className="bg-surface-container-low rounded-lg p-3 font-mono text-on-surface text-[13px] flex flex-col gap-1 border border-outline-variant/10">
-          <div className="flex items-center justify-between">
-            <span className="text-on-surface-variant font-sans">Latitude</span>
-            <span className="font-bold text-primary">{lat}° N</span>
+        {/* Live Readout Box with Manual Coordinate Editing & Detection */}
+        <div className="bg-surface-container-low rounded-lg p-3 font-mono text-on-surface text-[13px] flex flex-col gap-2 border border-outline-variant/10">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-on-surface-variant font-sans flex-shrink-0">Latitude</span>
+            <input
+              type="text"
+              value={lat}
+              onChange={(e) => setLat(e.target.value)}
+              className="font-bold text-primary bg-surface-container-lowest px-2 py-0.5 rounded text-right w-36 outline-none border border-outline-variant/20 focus:border-primary"
+            />
           </div>
-          <div className="flex items-center justify-between">
-            <span className="text-on-surface-variant font-sans">Longitude</span>
-            <span className="font-bold text-primary">{lng}° E</span>
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-on-surface-variant font-sans flex-shrink-0">Longitude</span>
+            <input
+              type="text"
+              value={lng}
+              onChange={(e) => setLng(e.target.value)}
+              className="font-bold text-primary bg-surface-container-lowest px-2 py-0.5 rounded text-right w-36 outline-none border border-outline-variant/20 focus:border-primary"
+            />
           </div>
           <div className="flex items-center justify-between">
             <span className="text-on-surface-variant font-sans">Orthometric Alt</span>
@@ -640,17 +650,25 @@ export const FieldsScreen: React.FC<FieldsScreenProps> = ({
           </div>
         </div>
 
-        {/* Primary Action Button */}
-        <button
-          onClick={simulateGpsCapture}
-          className="w-full mt-3 h-12 bg-primary-container text-on-primary rounded-lg text-[14px] font-bold flex items-center justify-center gap-2 shadow-sm hover:bg-primary active:scale-[0.99] transition-all cursor-pointer"
-          type="button"
-        >
-          <span className="material-symbols-outlined text-[22px]" style={{ fontVariationSettings: "'FILL' 1" }}>
-            add_location_alt
-          </span>
-          <span>CAPTURE CURRENT GPS POINT</span>
-        </button>
+        {/* Primary Action Buttons */}
+        <div className="grid grid-cols-2 gap-2 mt-3">
+          <button
+            onClick={simulateGpsCapture}
+            className="h-11 bg-secondary text-on-secondary rounded-lg text-[13px] font-bold flex items-center justify-center gap-1.5 shadow-sm hover:opacity-95 active:scale-[0.98] transition-all cursor-pointer"
+            type="button"
+          >
+            <span className="material-symbols-outlined text-[18px]">my_location</span>
+            <span>GET MY LIVE LOCATION</span>
+          </button>
+          <button
+            onClick={simulateGpsCapture}
+            className="h-11 bg-primary-container text-on-primary rounded-lg text-[13px] font-bold flex items-center justify-center gap-1.5 shadow-sm hover:bg-primary active:scale-[0.98] transition-all cursor-pointer"
+            type="button"
+          >
+            <span className="material-symbols-outlined text-[18px]">add_location_alt</span>
+            <span>CAPTURE POINT</span>
+          </button>
+        </div>
 
         {showGpsSuccess && (
           <p className="text-center text-[12px] font-bold text-secondary mt-2 animate-in fade-in">
