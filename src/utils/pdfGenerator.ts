@@ -3,6 +3,7 @@ import { Platform } from 'react-native';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
 import { RK_LOGO_FULL_BASE64 } from './logoBase64';
+import { RK_WATERMARK_BASE64 } from './watermarkBase64';
 
 export interface PdfReportData {
   docId: string;
@@ -28,26 +29,111 @@ export async function generateAndDownloadPdf(data: PdfReportData): Promise<void>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <style>
-          body { font-family: Helvetica, Arial, sans-serif; padding: 24px; color: #1c1b1f; line-height: 1.4; }
-          .logo-header { display: flex; align-items: center; justify-content: center; padding: 16px 0; margin-bottom: 16px; border-bottom: 3px solid #CC0000; }
-          .logo-header img { height: 70px; width: auto; }
-          .logo-header .company-text { margin-left: 12px; }
-          .logo-header .company-name { font-size: 18px; font-weight: bold; color: #CC0000; margin: 0; }
-          .logo-header .company-sub { font-size: 10px; color: #666; margin: 2px 0 0 0; letter-spacing: 1px; }
-          .header { border-bottom: 3px solid #216c2a; padding-bottom: 12px; margin-bottom: 20px; }
-          .title { font-size: 20px; font-weight: bold; color: #1c1b1f; margin: 0; }
-          .subtitle { font-size: 11px; color: #44483e; margin-top: 4px; }
-          .section-title { font-size: 13px; font-weight: bold; color: #216c2a; border-bottom: 1px solid #c4c8ba; padding-bottom: 4px; margin-top: 18px; margin-bottom: 10px; }
-          .info-row { font-size: 12px; margin-bottom: 6px; }
-          .info-label { font-weight: bold; color: #2d3129; }
-          .badge { display: inline-block; background: #e0f2e9; color: #216c2a; font-weight: bold; font-size: 11px; padding: 3px 8px; border-radius: 4px; }
-          .table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-          .table th, .table td { border: 1px solid #e0e4d5; padding: 8px; font-size: 11px; text-align: left; }
-          .table th { background: #f4f6ee; color: #1c1b1f; font-weight: bold; }
-          .footer { margin-top: 30px; background: #f4f6ee; padding: 12px; border-radius: 8px; font-size: 10px; color: #44483e; }
+          @page {
+            margin: 12mm 10mm;
+            size: A4 portrait;
+          }
+          * {
+            box-sizing: border-box;
+          }
+          html, body {
+            margin: 0;
+            padding: 0;
+          }
+          body {
+            font-family: Helvetica, Arial, sans-serif;
+            padding: 24px;
+            color: #1c1b1f;
+            line-height: 1.4;
+            position: relative;
+            background-color: #ffffff;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+          }
+          .watermark-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-image: url('${RK_WATERMARK_BASE64}');
+            background-repeat: repeat;
+            background-size: 100% 100%;
+            background-position: center;
+            z-index: -1;
+            opacity: 0.90;
+            pointer-events: none;
+          }
+          .logo-header {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 14px 0;
+            margin-bottom: 16px;
+            border-bottom: 3px solid #CC0000;
+          }
+          .logo-header img {
+            height: 68px;
+            width: auto;
+          }
+          .section-title {
+            font-size: 13px;
+            font-weight: bold;
+            color: #216c2a;
+            border-bottom: 1px solid #c4c8ba;
+            padding-bottom: 4px;
+            margin-top: 18px;
+            margin-bottom: 10px;
+          }
+          .info-row {
+            font-size: 12px;
+            margin-bottom: 6px;
+          }
+          .info-label {
+            font-weight: bold;
+            color: #2d3129;
+          }
+          .badge {
+            display: inline-block;
+            background: #e0f2e9;
+            color: #216c2a;
+            font-weight: bold;
+            font-size: 11px;
+            padding: 3px 8px;
+            border-radius: 4px;
+          }
+          .table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+          }
+          .table th, .table td {
+            border: 1px solid #c4c8ba;
+            padding: 8px;
+            font-size: 11px;
+            text-align: left;
+          }
+          .table th {
+            background: rgba(244, 246, 238, 0.92);
+            color: #1c1b1f;
+            font-weight: bold;
+          }
+          .table td {
+            background: rgba(255, 255, 255, 0.75);
+          }
+          .footer {
+            margin-top: 26px;
+            background: rgba(244, 246, 238, 0.88);
+            border: 1px solid #e0e4d5;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 10px;
+            color: #44483e;
+          }
         </style>
       </head>
       <body>
+        <div class="watermark-bg"></div>
         <div class="logo-header">
           <img src="${RK_LOGO_FULL_BASE64}" alt="Red-Knight Technologies" />
         </div>
