@@ -475,42 +475,43 @@ export const SurveysScreen: React.FC<SurveysScreenProps> = ({
         {activeModuleId === 1 && (
           <div className="flex flex-col gap-4">
             <span className="text-[13px] text-primary font-bold uppercase tracking-wider">FORM 01 — Farmer / Stakeholder Survey</span>
-            <div className="grid grid-cols-2 gap-2 text-[12px] bg-surface-container-low p-3 rounded-lg border border-outline-variant/10">
-              <div><span className="text-on-surface-variant font-medium block">Survey ID:</span> <strong className="text-on-surface">{activeSurvey?.id || 'New Survey'}</strong></div>
-              <div><span className="text-on-surface-variant font-medium block">Village / Sector:</span> <strong className="text-on-surface">{activeSurvey?.village || 'N/A'}</strong></div>
-              <div><span className="text-on-surface-variant font-medium block">District / Zone:</span> <strong className="text-on-surface">Field Zone</strong></div>
-              <div><span className="text-on-surface-variant font-medium block">Farming Experience:</span> <strong className="text-on-surface">18 Years</strong></div>
-              <div><span className="text-on-surface-variant font-medium block">Ownership:</span> <strong className="text-on-surface">Owned (8.5 Acres)</strong></div>
-            </div>
-
-            <div className="space-y-2">
-              <span className="text-[12px] text-on-surface-variant font-bold uppercase">C. Current Farming Practices</span>
-              <div className="overflow-x-auto text-[11px]">
-                <table className="w-full text-left border-collapse border border-outline-variant/20">
-                  <thead className="bg-surface-container font-bold text-on-surface">
-                    <tr><th className="p-1.5 border">Practice</th><th className="p-1.5 border">Method</th><th className="p-1.5 border">Frequency</th><th className="p-1.5 border">Remarks</th></tr>
-                  </thead>
-                  <tbody className="divide-y divide-outline-variant/10 text-on-surface">
-                    <tr><td className="p-1.5 border font-semibold">Land Preparation</td><td className="p-1.5 border">Tractor Mouldboard Plough</td><td className="p-1.5 border">Bi-annual</td><td className="p-1.5 border">Deep tilled</td></tr>
-                    <tr><td className="p-1.5 border font-semibold">Seed Selection</td><td className="p-1.5 border">Certified Co-86032 Setts</td><td className="p-1.5 border">Per Season</td><td className="p-1.5 border">Hot water treated</td></tr>
-                    <tr><td className="p-1.5 border font-semibold">Irrigation</td><td className="p-1.5 border">Inline Drip (16mm, 40cm)</td><td className="p-1.5 border">Alternate Days</td><td className="p-1.5 border">Automated solenoid</td></tr>
-                    <tr><td className="p-1.5 border font-semibold">Fertilization</td><td className="p-1.5 border">Venturi Drip Fertigation</td><td className="p-1.5 border">Weekly Split</td><td className="p-1.5 border">19-19-19 + Urea</td></tr>
-                  </tbody>
-                </table>
+            <div className="grid grid-cols-2 gap-3 text-[12px]">
+              <div>
+                <label className="text-[11px] font-bold text-on-surface-variant block mb-1">Farmer / Stakeholder Name</label>
+                <input type="text" placeholder="Enter farmer name" className="w-full h-10 px-3 rounded-lg bg-surface-container text-on-surface font-semibold border border-outline-variant/20 outline-none focus:border-primary" />
+              </div>
+              <div>
+                <label className="text-[11px] font-bold text-on-surface-variant block mb-1">Village / Sector</label>
+                <input type="text" placeholder="e.g. Huligere" className="w-full h-10 px-3 rounded-lg bg-surface-container text-on-surface border border-outline-variant/20 outline-none focus:border-primary" />
+              </div>
+              <div>
+                <label className="text-[11px] font-bold text-on-surface-variant block mb-1">Taluk / Block</label>
+                <input type="text" placeholder="e.g. Mandya" className="w-full h-10 px-3 rounded-lg bg-surface-container text-on-surface border border-outline-variant/20 outline-none focus:border-primary" />
+              </div>
+              <div>
+                <label className="text-[11px] font-bold text-on-surface-variant block mb-1">District</label>
+                <input type="text" placeholder="District name" className="w-full h-10 px-3 rounded-lg bg-surface-container text-on-surface border border-outline-variant/20 outline-none focus:border-primary" />
+              </div>
+              <div>
+                <label className="text-[11px] font-bold text-on-surface-variant block mb-1">Farming Experience (Years)</label>
+                <input type="number" placeholder="e.g. 15" className="w-full h-10 px-3 rounded-lg bg-surface-container text-on-surface border border-outline-variant/20 outline-none focus:border-primary" />
+              </div>
+              <div>
+                <label className="text-[11px] font-bold text-on-surface-variant block mb-1">Farm Ownership</label>
+                <select className="w-full h-10 px-3 rounded-lg bg-surface-container text-on-surface border border-outline-variant/20 outline-none focus:border-primary">
+                  <option value="">Select Ownership</option>
+                  <option value="Owned">Owned</option>
+                  <option value="Leased">Leased</option>
+                  <option value="Both">Both Owned & Leased</option>
+                </select>
               </div>
             </div>
 
             <div className="space-y-2">
-              <span className="text-[12px] text-on-surface-variant font-bold uppercase">D. Priority Problems & Constraints</span>
+              <span className="text-[12px] text-on-surface-variant font-bold uppercase">C. Priority Constraints & Farmer Feedback</span>
               <div className="grid grid-cols-2 gap-2">
-                <div className="p-2 bg-surface-container rounded border text-[11px]">
-                  <span className="text-secondary font-bold">1. Water Shortage</span>
-                  <p className="text-outline">Severity: 4/5 · Solution: Borewell recharge pit</p>
-                </div>
-                <div className="p-2 bg-surface-container rounded border text-[11px]">
-                  <span className="text-tertiary font-bold">2. Labour Shortage</span>
-                  <p className="text-outline">Severity: 4/5 · Solution: Mechanical harvester rent</p>
-                </div>
+                <input type="text" placeholder="Primary Constraint (e.g. Water Shortage)" className="h-10 px-3 rounded-lg bg-surface-container text-[12px] border border-outline-variant/20 outline-none" />
+                <input type="text" placeholder="Expected Support (e.g. Drip Subsidy)" className="h-10 px-3 rounded-lg bg-surface-container text-[12px] border border-outline-variant/20 outline-none" />
               </div>
             </div>
           </div>
@@ -519,25 +520,30 @@ export const SurveysScreen: React.FC<SurveysScreenProps> = ({
         {activeModuleId === 2 && (
           <div className="flex flex-col gap-4">
             <span className="text-[13px] text-primary font-bold uppercase tracking-wider">FORM 02 — Field Survey & Cadastral Geometry</span>
-            <div className="grid grid-cols-3 gap-2 text-[11px] bg-surface-container-low p-3 rounded-lg border border-outline-variant/10">
-              <div><span className="text-on-surface-variant block font-medium">GPS Latitude</span><strong className="text-primary font-mono">12.584219° N</strong></div>
-              <div><span className="text-on-surface-variant block font-medium">GPS Longitude</span><strong className="text-primary font-mono">77.042831° E</strong></div>
-              <div><span className="text-on-surface-variant block font-medium">Altitude / Elev</span><strong className="text-on-surface font-mono">662.4m MSL</strong></div>
-              <div><span className="text-on-surface-variant block font-medium">Field Area</span><strong className="text-on-surface">3.2 Ha (7.9 Acres)</strong></div>
-              <div><span className="text-on-surface-variant block font-medium">Perimeter</span><strong className="text-on-surface">640 meters</strong></div>
-              <div><span className="text-on-surface-variant block font-medium">Slope Gradient</span><strong className="text-secondary font-bold">3.8% Eastward</strong></div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2 text-[12px]">
-              <div className="p-2.5 bg-surface-container rounded-lg border">
-                <span className="font-bold text-primary block mb-1">Soil Surface & Drainage</span>
-                <p className="text-[11px] text-on-surface-variant">Erosion: <strong>Low</strong> · Waterlogging: <strong>Nil</strong></p>
-                <p className="text-[11px] text-on-surface-variant">Natural Drainage: <strong>Moderate (Swale)</strong></p>
+            <div className="grid grid-cols-3 gap-3 text-[12px]">
+              <div>
+                <label className="text-[11px] font-bold text-on-surface-variant block mb-1">Field ID / Plot Ref</label>
+                <input type="text" placeholder="e.g. FLD-01" className="w-full h-10 px-3 rounded-lg bg-surface-container text-on-surface font-semibold border border-outline-variant/20 outline-none" />
               </div>
-              <div className="p-2.5 bg-surface-container rounded-lg border">
-                <span className="font-bold text-primary block mb-1">Field Mapping & Drone Status</span>
-                <p className="text-[11px] text-on-surface-variant">GPS Boundary: <strong className="text-secondary">Recorded (RTK)</strong></p>
-                <p className="text-[11px] text-on-surface-variant">Drone Survey: <strong>Required (NDVI)</strong></p>
+              <div>
+                <label className="text-[11px] font-bold text-on-surface-variant block mb-1">GPS Latitude (°N)</label>
+                <input type="number" step="0.000001" placeholder="Latitude e.g. 12.5842" className="w-full h-10 px-3 rounded-lg bg-surface-container text-on-surface border border-outline-variant/20 outline-none" />
+              </div>
+              <div>
+                <label className="text-[11px] font-bold text-on-surface-variant block mb-1">GPS Longitude (°E)</label>
+                <input type="number" step="0.000001" placeholder="Longitude e.g. 77.0428" className="w-full h-10 px-3 rounded-lg bg-surface-container text-on-surface border border-outline-variant/20 outline-none" />
+              </div>
+              <div>
+                <label className="text-[11px] font-bold text-on-surface-variant block mb-1">Field Length (m)</label>
+                <input type="number" placeholder="Meters" className="w-full h-10 px-3 rounded-lg bg-surface-container text-on-surface border border-outline-variant/20 outline-none" />
+              </div>
+              <div>
+                <label className="text-[11px] font-bold text-on-surface-variant block mb-1">Field Width (m)</label>
+                <input type="number" placeholder="Meters" className="w-full h-10 px-3 rounded-lg bg-surface-container text-on-surface border border-outline-variant/20 outline-none" />
+              </div>
+              <div>
+                <label className="text-[11px] font-bold text-on-surface-variant block mb-1">Slope (%)</label>
+                <input type="number" step="0.1" placeholder="Slope %" className="w-full h-10 px-3 rounded-lg bg-surface-container text-on-surface border border-outline-variant/20 outline-none" />
               </div>
             </div>
           </div>
@@ -545,71 +551,31 @@ export const SurveysScreen: React.FC<SurveysScreenProps> = ({
 
         {activeModuleId === 3 && (
           <div className="flex flex-col gap-4">
-            {/* Sample Meta Block */}
-            <div className="bg-surface-container-low rounded-lg p-3 flex flex-col gap-2 border border-outline-variant/10">
-              <div className="flex justify-between items-center text-on-surface">
-                <span className="text-[13px] text-on-surface-variant">Core ID</span>
-                <span className="text-[13px] font-bold text-primary">{soilData.coreId}</span>
+            <span className="text-[13px] text-primary font-bold uppercase tracking-wider">FORM 03 — Physical & Chemical Soil Testing</span>
+            <div className="grid grid-cols-3 gap-3 text-[12px]">
+              <div>
+                <label className="text-[11px] font-bold text-on-surface-variant block mb-1">USDA Soil Texture</label>
+                <input type="text" placeholder="e.g. Clay Loam" className="w-full h-10 px-3 rounded-lg bg-surface-container text-on-surface border border-outline-variant/20 outline-none" />
               </div>
-              <div className="flex justify-between items-center text-on-surface">
-                <span className="text-[13px] text-on-surface-variant">Horizon Depth</span>
-                <span className="text-[13px] font-bold text-on-surface">{soilData.horizonDepth}</span>
+              <div>
+                <label className="text-[11px] font-bold text-on-surface-variant block mb-1">pH Level</label>
+                <input type="number" step="0.1" placeholder="e.g. 6.8" className="w-full h-10 px-3 rounded-lg bg-surface-container text-on-surface border border-outline-variant/20 outline-none" />
               </div>
-              <div className="flex justify-between items-center text-on-surface">
-                <span className="text-[13px] text-on-surface-variant">Subsamples</span>
-                <span className="text-[13px] font-medium text-on-surface">{soilData.subsamples}</span>
+              <div>
+                <label className="text-[11px] font-bold text-on-surface-variant block mb-1">Electrical Cond (dS/m)</label>
+                <input type="number" step="0.01" placeholder="e.g. 0.42" className="w-full h-10 px-3 rounded-lg bg-surface-container text-on-surface border border-outline-variant/20 outline-none" />
               </div>
-            </div>
-
-            {/* Physical Properties Section */}
-            <div className="flex flex-col gap-2.5">
-              <div className="flex items-center justify-between">
-                <span className="text-[13px] text-primary font-bold uppercase tracking-wider">Physical Properties</span>
-                <span className="text-[11px] px-2 py-0.5 rounded bg-surface-container-high text-on-surface-variant font-semibold">Hydrometer Calibrated</span>
+              <div>
+                <label className="text-[11px] font-bold text-on-surface-variant block mb-1">Nitrogen (N kg/ha)</label>
+                <input type="number" placeholder="kg/ha" className="w-full h-10 px-3 rounded-lg bg-surface-container text-on-surface border border-outline-variant/20 outline-none" />
               </div>
-              <div className="bg-surface-container p-3 rounded-lg flex items-center justify-between border border-outline-variant/10">
-                <div className="flex flex-col">
-                  <span className="text-[11px] text-on-surface-variant font-medium">USDA Classification</span>
-                  <span className="text-[18px] font-bold text-primary leading-tight">{soilData.usdaClassification}</span>
-                </div>
-                <div className="flex gap-1.5 text-center text-[12px]">
-                  <div className="bg-surface-container-lowest px-2 py-1 rounded shadow-xs"><p className="text-on-surface-variant text-[10px]">Sand</p><p className="font-bold text-on-surface">{soilData.sandPercent}%</p></div>
-                  <div className="bg-surface-container-lowest px-2 py-1 rounded shadow-xs"><p className="text-on-surface-variant text-[10px]">Silt</p><p className="font-bold text-on-surface">{soilData.siltPercent}%</p></div>
-                  <div className="bg-surface-container-lowest px-2 py-1 rounded shadow-xs"><p className="text-on-surface-variant text-[10px]">Clay</p><p className="font-bold text-on-surface">{soilData.clayPercent}%</p></div>
-                </div>
+              <div>
+                <label className="text-[11px] font-bold text-on-surface-variant block mb-1">Phosphorus (P kg/ha)</label>
+                <input type="number" placeholder="kg/ha" className="w-full h-10 px-3 rounded-lg bg-surface-container text-on-surface border border-outline-variant/20 outline-none" />
               </div>
-              <div className="grid grid-cols-2 gap-2">
-                <div className="bg-surface-container-low p-3 rounded-lg flex flex-col border border-outline-variant/10">
-                  <span className="text-[11px] text-on-surface-variant font-medium">Bulk Density</span>
-                  <div className="flex items-baseline gap-1 mt-1"><span className="text-[20px] font-bold text-primary">{soilData.bulkDensity}</span><span className="text-[11px] text-on-surface-variant font-sans">g/cm³</span></div>
-                </div>
-                <div className="bg-surface-container-low p-3 rounded-lg flex flex-col border border-outline-variant/10">
-                  <span className="text-[11px] text-on-surface-variant font-medium">Soil Moisture (TDR)</span>
-                  <div className="flex items-baseline gap-1 mt-1"><span className="text-[20px] font-bold text-primary">{soilData.soilMoistureVwc}</span><span className="text-[11px] text-on-surface-variant font-sans">% VWC</span></div>
-                </div>
-              </div>
-            </div>
-
-            {/* Chemical & Nutrient Section */}
-            <div className="flex flex-col gap-3">
-              <span className="text-[13px] text-primary font-bold uppercase tracking-wider">Chemical & Nutrients</span>
-              <div className="grid grid-cols-3 gap-2">
-                <div className="bg-surface-container-low p-2.5 rounded-lg flex flex-col items-center text-center border border-outline-variant/10"><span className="text-[11px] text-on-surface-variant font-medium">pH Level</span><span className="text-[18px] font-bold text-primary mt-0.5">{soilData.ph}</span></div>
-                <div className="bg-surface-container-low p-2.5 rounded-lg flex flex-col items-center text-center border border-outline-variant/10"><span className="text-[11px] text-on-surface-variant font-medium">Elec. Cond.</span><span className="text-[18px] font-bold text-primary mt-0.5">{soilData.ec} dS/m</span></div>
-                <div className="bg-surface-container-low p-2.5 rounded-lg flex flex-col items-center text-center border border-outline-variant/10"><span className="text-[11px] text-on-surface-variant font-medium">Org. Carbon</span><span className="text-[18px] font-bold text-primary mt-0.5">{soilData.orgCarbon}%</span></div>
-              </div>
-            </div>
-
-            {/* Geotagged Photo Upload */}
-            <div className="flex flex-col gap-2">
-              <span className="text-[13px] text-primary font-bold uppercase tracking-wider">Core Cross-Section Photo</span>
-              <input type="file" ref={fileInputRef} onChange={(e) => { const file = e.target.files?.[0]; if (file) handleFileUpload(file); }} accept="image/*" className="hidden" />
-              <div onClick={handleRetakePhoto} className="relative rounded-xl overflow-hidden shadow-sm aspect-[16/9] w-full bg-surface-container-high cursor-pointer">
-                <img className="w-full h-full object-cover" alt="Soil auger core" src={photoPreview} />
-                <div className="absolute inset-x-0 bottom-0 bg-primary/80 p-2 text-white text-[11px] font-mono flex justify-between">
-                  <span>{soilData.coreId} Core Sample</span>
-                  <span>{soilData.gpsCoords}</span>
-                </div>
+              <div>
+                <label className="text-[11px] font-bold text-on-surface-variant block mb-1">Potassium (K kg/ha)</label>
+                <input type="number" placeholder="kg/ha" className="w-full h-10 px-3 rounded-lg bg-surface-container text-on-surface border border-outline-variant/20 outline-none" />
               </div>
             </div>
           </div>
@@ -617,22 +583,30 @@ export const SurveysScreen: React.FC<SurveysScreenProps> = ({
 
         {activeModuleId === 4 && (
           <div className="flex flex-col gap-4">
-            <span className="text-[13px] text-primary font-bold uppercase tracking-wider">FORM 04 — Water & Hydraulic Survey</span>
-            <div className="grid grid-cols-2 gap-2 text-[12px] bg-surface-container-low p-3 rounded-lg border border-outline-variant/10">
-              <div><span className="text-on-surface-variant font-medium block">Water Source:</span><strong className="text-primary">Deep Borewell (180 ft)</strong></div>
-              <div><span className="text-on-surface-variant font-medium block">Pump Capacity:</span><strong className="text-on-surface">7.5 HP Submersible</strong></div>
-              <div><span className="text-on-surface-variant font-medium block">Pump Discharge:</span><strong className="text-on-surface">220 L/min</strong></div>
-              <div><span className="text-on-surface-variant font-medium block">Daily Availability:</span><strong className="text-on-surface">6.5 hours / day</strong></div>
-              <div><span className="text-on-surface-variant font-medium block">System Pressure:</span><strong className="text-secondary font-bold">180 kPa (2.5 bar)</strong></div>
-              <div><span className="text-on-surface-variant font-medium block">Distribution Uniformity:</span><strong className="text-secondary font-bold">92% (Optimal)</strong></div>
-            </div>
-
-            <div className="space-y-2">
-              <span className="text-[12px] text-on-surface-variant font-bold uppercase">C. Water Quality Parameters</span>
-              <div className="grid grid-cols-3 gap-2 text-center text-[11px]">
-                <div className="p-2 bg-surface-container rounded border"><p className="text-outline">pH</p><p className="font-bold text-primary text-[15px]">7.2</p></div>
-                <div className="p-2 bg-surface-container rounded border"><p className="text-outline">TDS</p><p className="font-bold text-primary text-[15px]">420 mg/L</p></div>
-                <div className="p-2 bg-surface-container rounded border"><p className="text-outline">Salinity</p><p className="font-bold text-secondary text-[15px]">0.35 ppt</p></div>
+            <span className="text-[13px] text-primary font-bold uppercase tracking-wider">FORM 04 — Water Source & Hydraulic Setup</span>
+            <div className="grid grid-cols-2 gap-3 text-[12px]">
+              <div>
+                <label className="text-[11px] font-bold text-on-surface-variant block mb-1">Water Source Type</label>
+                <select className="w-full h-10 px-3 rounded-lg bg-surface-container text-on-surface border border-outline-variant/20 outline-none">
+                  <option value="">Select Water Source</option>
+                  <option value="Borewell">Borewell</option>
+                  <option value="Open well">Open well</option>
+                  <option value="Canal">Canal</option>
+                  <option value="Pond">Pond</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-[11px] font-bold text-on-surface-variant block mb-1">Pump Capacity (HP)</label>
+                <input type="number" step="0.5" placeholder="e.g. 7.5 HP" className="w-full h-10 px-3 rounded-lg bg-surface-container text-on-surface border border-outline-variant/20 outline-none" />
+              </div>
+              <div>
+                <label className="text-[11px] font-bold text-on-surface-variant block mb-1">Water pH</label>
+                <input type="number" step="0.1" placeholder="e.g. 7.2" className="w-full h-10 px-3 rounded-lg bg-surface-container text-on-surface border border-outline-variant/20 outline-none" />
+              </div>
+              <div>
+                <label className="text-[11px] font-bold text-on-surface-variant block mb-1">TDS (mg/L)</label>
+                <input type="number" placeholder="e.g. 420" className="w-full h-10 px-3 rounded-lg bg-surface-container text-on-surface border border-outline-variant/20 outline-none" />
               </div>
             </div>
           </div>
@@ -640,23 +614,23 @@ export const SurveysScreen: React.FC<SurveysScreenProps> = ({
 
         {activeModuleId === 5 && (
           <div className="flex flex-col gap-4">
-            <span className="text-[13px] text-primary font-bold uppercase tracking-wider">FORM 05 — Crop & Plant Population Survey</span>
-            <div className="grid grid-cols-2 gap-2 text-[12px] bg-surface-container-low p-3 rounded-lg border border-outline-variant/10">
-              <div><span className="text-on-surface-variant font-medium block">Crop & Variety:</span><strong className="text-primary font-bold">Sugarcane (Co-86032)</strong></div>
-              <div><span className="text-on-surface-variant font-medium block">Growth Stage:</span><strong className="text-on-surface">Grand Growth (160 Days)</strong></div>
-              <div><span className="text-on-surface-variant font-medium block">Row Spacing:</span><strong className="text-on-surface">150 cm Dual-Row</strong></div>
-              <div><span className="text-on-surface-variant font-medium block">Plant Population:</span><strong className="text-on-surface">62,000 canes / ha</strong></div>
-              <div><span className="text-on-surface-variant font-medium block">Canopy Cover:</span><strong className="text-secondary font-bold">88% Intercepted</strong></div>
-              <div><span className="text-on-surface-variant font-medium block">Plant Height:</span><strong className="text-on-surface">2.45 meters</strong></div>
-            </div>
-
-            <div className="p-3 bg-surface-container rounded-lg border text-[12px]">
-              <span className="font-bold text-primary block mb-1">D. Yield Expectations & Quality</span>
-              <div className="flex justify-between items-center mt-1">
-                <span>Expected Yield Target:</span><strong className="text-secondary">110 Tonnes / Ha</strong>
+            <span className="text-[13px] text-primary font-bold uppercase tracking-wider">FORM 05 — Crop Identification & Plant Geometry</span>
+            <div className="grid grid-cols-2 gap-3 text-[12px]">
+              <div>
+                <label className="text-[11px] font-bold text-on-surface-variant block mb-1">Crop & Variety</label>
+                <input type="text" placeholder="e.g. Sugarcane Co-86032" className="w-full h-10 px-3 rounded-lg bg-surface-container text-on-surface border border-outline-variant/20 outline-none" />
               </div>
-              <div className="flex justify-between items-center mt-1">
-                <span>Current Estimated Stalk Weight:</span><strong>1.45 kg / cane</strong>
+              <div>
+                <label className="text-[11px] font-bold text-on-surface-variant block mb-1">Plant Population (plants/ha)</label>
+                <input type="number" placeholder="e.g. 62000" className="w-full h-10 px-3 rounded-lg bg-surface-container text-on-surface border border-outline-variant/20 outline-none" />
+              </div>
+              <div>
+                <label className="text-[11px] font-bold text-on-surface-variant block mb-1">Row Spacing (cm)</label>
+                <input type="number" placeholder="e.g. 150" className="w-full h-10 px-3 rounded-lg bg-surface-container text-on-surface border border-outline-variant/20 outline-none" />
+              </div>
+              <div>
+                <label className="text-[11px] font-bold text-on-surface-variant block mb-1">Expected Yield Target (kg/ha)</label>
+                <input type="number" placeholder="e.g. 110000" className="w-full h-10 px-3 rounded-lg bg-surface-container text-on-surface border border-outline-variant/20 outline-none" />
               </div>
             </div>
           </div>
@@ -665,75 +639,83 @@ export const SurveysScreen: React.FC<SurveysScreenProps> = ({
         {activeModuleId === 6 && (
           <div className="flex flex-col gap-4">
             <span className="text-[13px] text-primary font-bold uppercase tracking-wider">FORM 06 — Pest & Disease Spatial Survey</span>
-            <div className="grid grid-cols-2 gap-2 text-[12px] bg-surface-container-low p-3 rounded-lg border border-outline-variant/10">
-              <div><span className="text-on-surface-variant font-medium block">Top Pest Detected:</span><strong className="text-tertiary">Early Shoot Borer (Chilo infuscatellus)</strong></div>
-              <div><span className="text-on-surface-variant font-medium block">Pest Incidence / Severity:</span><strong className="text-tertiary">12% Incidence (Low)</strong></div>
-              <div><span className="text-on-surface-variant font-medium block">Top Disease Detected:</span><strong className="text-error">Red Rot (Colletotrichum falcatum)</strong></div>
-              <div><span className="text-on-surface-variant font-medium block">Disease Severity:</span><strong className="text-error">4% Severity (Zone Z4)</strong></div>
-            </div>
-
-            <div className="space-y-1 text-[11px]">
-              <span className="text-on-surface-variant font-bold uppercase">D. Spatial Distribution Zones</span>
-              <div className="flex justify-between items-center p-2 bg-surface-container rounded"><span>Zone Z2 (Pest Hotspot):</span><strong className="text-tertiary font-mono">12.5843°N, 77.0429°E · 8% Severity</strong></div>
-              <div className="flex justify-between items-center p-2 bg-surface-container rounded mt-1"><span>Zone Z4 (Disease Buffer):</span><strong className="text-error font-mono">12.5841°N, 77.0426°E · 4% Severity</strong></div>
+            <div className="grid grid-cols-2 gap-3 text-[12px]">
+              <div>
+                <label className="text-[11px] font-bold text-on-surface-variant block mb-1">Pest Name</label>
+                <input type="text" placeholder="e.g. Early Shoot Borer" className="w-full h-10 px-3 rounded-lg bg-surface-container text-on-surface border border-outline-variant/20 outline-none" />
+              </div>
+              <div>
+                <label className="text-[11px] font-bold text-on-surface-variant block mb-1">Pest Incidence (%)</label>
+                <input type="number" placeholder="Incidence %" className="w-full h-10 px-3 rounded-lg bg-surface-container text-on-surface border border-outline-variant/20 outline-none" />
+              </div>
+              <div>
+                <label className="text-[11px] font-bold text-on-surface-variant block mb-1">Disease Name</label>
+                <input type="text" placeholder="e.g. Red Rot" className="w-full h-10 px-3 rounded-lg bg-surface-container text-on-surface border border-outline-variant/20 outline-none" />
+              </div>
+              <div>
+                <label className="text-[11px] font-bold text-on-surface-variant block mb-1">Disease Severity (%)</label>
+                <input type="number" placeholder="Severity %" className="w-full h-10 px-3 rounded-lg bg-surface-container text-on-surface border border-outline-variant/20 outline-none" />
+              </div>
             </div>
           </div>
         )}
 
         {activeModuleId === 7 && (
           <div className="flex flex-col gap-4">
-            <span className="text-[13px] text-primary font-bold uppercase tracking-wider">FORM 07 — Microclimate & Atmospheric Survey</span>
-            <div className="grid grid-cols-3 gap-2 text-center text-[12px]">
-              <div className="p-2.5 bg-surface-container-low rounded border"><span className="text-on-surface-variant text-[11px] block">Air Temperature</span><strong className="text-primary text-[16px]">31.4 °C</strong></div>
-              <div className="p-2.5 bg-surface-container-low rounded border"><span className="text-on-surface-variant text-[11px] block">Relative Humidity</span><strong className="text-primary text-[16px]">64% RH</strong></div>
-              <div className="p-2.5 bg-surface-container-low rounded border"><span className="text-on-surface-variant text-[11px] block">Solar Radiation</span><strong className="text-secondary text-[16px]">780 W/m²</strong></div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2 text-[11px] bg-surface-container p-3 rounded-lg border">
-              <div><span className="text-on-surface-variant block">VPD (Vapour Pressure Deficit):</span><strong className="text-on-surface font-mono">1.42 kPa (Optimal)</strong></div>
-              <div><span className="text-on-surface-variant block">Evapotranspiration (ET0):</span><strong className="text-secondary font-mono">5.2 mm / day</strong></div>
-              <div><span className="text-on-surface-variant block">Canopy Microclimate Temp:</span><strong className="text-on-surface font-mono">29.1 °C</strong></div>
-              <div><span className="text-on-surface-variant block">Microclimate Risk Grade:</span><strong className="text-secondary font-bold">Low Stress Risk</strong></div>
+            <span className="text-[13px] text-primary font-bold uppercase tracking-wider">FORM 07 — Weather & Crop Microclimate</span>
+            <div className="grid grid-cols-2 gap-3 text-[12px]">
+              <div>
+                <label className="text-[11px] font-bold text-on-surface-variant block mb-1">Air Temperature (°C)</label>
+                <input type="number" step="0.1" placeholder="°C" className="w-full h-10 px-3 rounded-lg bg-surface-container text-on-surface border border-outline-variant/20 outline-none" />
+              </div>
+              <div>
+                <label className="text-[11px] font-bold text-on-surface-variant block mb-1">Relative Humidity (%)</label>
+                <input type="number" step="0.1" placeholder="%" className="w-full h-10 px-3 rounded-lg bg-surface-container text-on-surface border border-outline-variant/20 outline-none" />
+              </div>
+              <div>
+                <label className="text-[11px] font-bold text-on-surface-variant block mb-1">Wind Speed (m/s)</label>
+                <input type="number" step="0.1" placeholder="m/s" className="w-full h-10 px-3 rounded-lg bg-surface-container text-on-surface border border-outline-variant/20 outline-none" />
+              </div>
+              <div>
+                <label className="text-[11px] font-bold text-on-surface-variant block mb-1">Canopy Temperature (°C)</label>
+                <input type="number" step="0.1" placeholder="°C" className="w-full h-10 px-3 rounded-lg bg-surface-container text-on-surface border border-outline-variant/20 outline-none" />
+              </div>
             </div>
           </div>
         )}
 
         {activeModuleId === 8 && (
           <div className="flex flex-col gap-4">
-            <span className="text-[13px] text-primary font-bold uppercase tracking-wider">FORM 08 — Existing Technology & Sensor Inventory</span>
-            <div className="space-y-2 text-[11px]">
-              <div className="p-2.5 bg-surface-container-low rounded-lg border flex justify-between items-center">
-                <div><strong className="text-primary block text-[12px]">Capacitive Soil Moisture Probe</strong><span className="text-on-surface-variant">LoRaWAN 865 MHz · Depth 0-40cm</span></div>
-                <span className="bg-secondary-container text-on-secondary-container px-2 py-0.5 rounded font-bold">Active</span>
+            <span className="text-[13px] text-primary font-bold uppercase tracking-wider">FORM 08 — Sensors & Tech Inventory</span>
+            <div className="grid grid-cols-2 gap-3 text-[12px]">
+              <div>
+                <label className="text-[11px] font-bold text-on-surface-variant block mb-1">Sensors / Tech Present</label>
+                <input type="text" placeholder="Describe equipment" className="w-full h-10 px-3 rounded-lg bg-surface-container text-on-surface border border-outline-variant/20 outline-none" />
               </div>
-              <div className="p-2.5 bg-surface-container-low rounded-lg border flex justify-between items-center">
-                <div><strong className="text-primary block text-[12px]">RTK GNSS Field Rover</strong><span className="text-on-surface-variant">Dual Frequency L1/L5 · ±0.02m</span></div>
-                <span className="bg-secondary-container text-on-secondary-container px-2 py-0.5 rounded font-bold">Calibrated</span>
+              <div>
+                <label className="text-[11px] font-bold text-on-surface-variant block mb-1">Irrigation Automation</label>
+                <input type="text" placeholder="Drip solenoids / controller" className="w-full h-10 px-3 rounded-lg bg-surface-container text-on-surface border border-outline-variant/20 outline-none" />
               </div>
-            </div>
-
-            <div className="p-3 bg-surface-container rounded-lg border text-[11px]">
-              <span className="font-bold text-primary block mb-1 uppercase">D. Technology Gap Priority</span>
-              <p className="text-on-surface-variant">Priority 1: <strong>Automated Solenoid Drip Valves</strong></p>
-              <p className="text-on-surface-variant">Priority 2: <strong>Thermal Multispectral Drone Mapping</strong></p>
             </div>
           </div>
         )}
 
         {activeModuleId === 9 && (
           <div className="flex flex-col gap-4">
-            <span className="text-[13px] text-primary font-bold uppercase tracking-wider">FORM 09 — Agronomic Economic & Financial Audit</span>
-            <div className="grid grid-cols-2 gap-2 text-[12px] bg-surface-container-low p-3 rounded-lg border border-outline-variant/10">
-              <div><span className="text-on-surface-variant font-medium block">Gross Revenue (Est.):</span><strong className="text-primary text-[15px]">₹ 3,52,000 / ha</strong></div>
-              <div><span className="text-on-surface-variant font-medium block">Total Input Cost:</span><strong className="text-on-surface text-[15px]">₹ 1,18,000 / ha</strong></div>
-              <div><span className="text-on-surface-variant font-medium block">Labour Expenditure:</span><strong className="text-on-surface">₹ 42,000 (35 Days)</strong></div>
-              <div><span className="text-on-surface-variant font-medium block">Net Income Target:</span><strong className="text-secondary text-[15px] font-bold">₹ 2,34,000 / ha</strong></div>
-            </div>
-
-            <div className="p-3 bg-surface-container rounded-lg border text-[11px]">
-              <span className="font-bold text-primary block mb-1 uppercase">D. Drip & Tech ROI Metrics</span>
-              <div className="flex justify-between items-center mt-1"><span>Input Saving with Drip:</span><strong className="text-secondary">28% Fertilizer / Water</strong></div>
-              <div className="flex justify-between items-center mt-1"><span>Expected ROI %:</span><strong className="text-secondary font-bold">142% Over 3 Cycles</strong></div>
+            <span className="text-[13px] text-primary font-bold uppercase tracking-wider">FORM 09 — Farm Economics & Financial Audit</span>
+            <div className="grid grid-cols-3 gap-3 text-[12px]">
+              <div>
+                <label className="text-[11px] font-bold text-on-surface-variant block mb-1">Gross Revenue (₹ / Ha)</label>
+                <input type="number" placeholder="Enter ₹" className="w-full h-10 px-3 rounded-lg bg-surface-container text-on-surface border border-outline-variant/20 outline-none" />
+              </div>
+              <div>
+                <label className="text-[11px] font-bold text-on-surface-variant block mb-1">Total Input Cost (₹ / Ha)</label>
+                <input type="number" placeholder="Enter ₹" className="w-full h-10 px-3 rounded-lg bg-surface-container text-on-surface border border-outline-variant/20 outline-none" />
+              </div>
+              <div>
+                <label className="text-[11px] font-bold text-on-surface-variant block mb-1">Labour Cost (₹ / Ha)</label>
+                <input type="number" placeholder="Enter ₹" className="w-full h-10 px-3 rounded-lg bg-surface-container text-on-surface border border-outline-variant/20 outline-none" />
+              </div>
             </div>
           </div>
         )}
@@ -741,20 +723,18 @@ export const SurveysScreen: React.FC<SurveysScreenProps> = ({
         {activeModuleId === 10 && (
           <div className="flex flex-col gap-4">
             <span className="text-[13px] text-primary font-bold uppercase tracking-wider">FORM 10 — Temporal & Crop-Cycle Timeline Survey</span>
-            <div className="grid grid-cols-2 gap-2 text-[12px] bg-surface-container-low p-3 rounded-lg border border-outline-variant/10">
-              <div><span className="text-on-surface-variant font-medium block">Sowing / Planting Date:</span><strong className="text-on-surface">15 March 2026</strong></div>
-              <div><span className="text-on-surface-variant font-medium block">Expected Harvest Date:</span><strong className="text-on-surface">10 February 2027</strong></div>
-              <div><span className="text-on-surface-variant font-medium block">Survey Frequency:</span><strong className="text-primary font-bold">Fortnightly (Every 14 days)</strong></div>
-              <div><span className="text-on-surface-variant font-medium block">Total Logged Audits:</span><strong className="text-secondary font-bold">12 Cycles Completed</strong></div>
-            </div>
-
-            <div className="space-y-1.5 text-[11px]">
-              <span className="text-on-surface-variant font-bold uppercase">C. Management Events History</span>
-              <div className="p-2 bg-surface-container rounded flex justify-between items-center">
-                <span>02 Aug: <strong>Fertigation Split #4</strong></span><span className="text-secondary font-bold">19-19-19 (45 kg)</span>
+            <div className="grid grid-cols-2 gap-3 text-[12px]">
+              <div>
+                <label className="text-[11px] font-bold text-on-surface-variant block mb-1">Observation Stage</label>
+                <input type="text" placeholder="e.g. Tillering / Grand Growth" className="w-full h-10 px-3 rounded-lg bg-surface-container text-on-surface border border-outline-variant/20 outline-none" />
               </div>
-              <div className="p-2 bg-surface-container rounded flex justify-between items-center">
-                <span>18 Aug: <strong>Earthing Up & Trash Mulch</strong></span><span className="text-primary font-bold">Completed</span>
+              <div>
+                <label className="text-[11px] font-bold text-on-surface-variant block mb-1">Survey Frequency</label>
+                <select className="w-full h-10 px-3 rounded-lg bg-surface-container text-on-surface border border-outline-variant/20 outline-none">
+                  <option value="Fortnightly">Fortnightly (Every 14 days)</option>
+                  <option value="Weekly">Weekly</option>
+                  <option value="Daily">Daily</option>
+                </select>
               </div>
             </div>
           </div>
