@@ -32,21 +32,34 @@ export function generateAndDownloadPdf(data: PdfReportData): void {
   // Build stream content (PDF graphic/text commands)
   const lines: string[] = [];
 
-  // Header & Title Banner
+  // Company Branding Header — Red-Knight Technologies
+  // Red background bar
+  lines.push('q 0.80 0.00 0.00 rg 40 750 532 30 re f Q');
+
+  // Company name in white on red bar
   lines.push('BT');
-  lines.push('/F1 20 Tf');
-  lines.push('50 740 Td');
+  lines.push('/F1 16 Tf');
+  lines.push('1 1 1 rg');
+  lines.push('50 758 Td');
+  lines.push(`(${pdfEscape('RED-KNIGHT TECHNOLOGIES PRIVATE LIMITED')}) Tj`);
+  lines.push('ET');
+
+  // Report title below
+  lines.push('BT');
+  lines.push('/F1 14 Tf');
+  lines.push('0 0 0 rg');
+  lines.push('50 730 Td');
   lines.push(`(${pdfEscape('AGRISURVEY - COMPLIANCE & EVALUATION DOSSIER')}) Tj`);
   lines.push('ET');
 
   lines.push('BT');
   lines.push('/F2 10 Tf');
-  lines.push('50 722 Td');
+  lines.push('50 714 Td');
   lines.push(`(${pdfEscape(`Document Ref: ${data.docId}  |  Generated: ${data.date}  |  ISO 19115 GIS Certified`)}) Tj`);
   lines.push('ET');
 
   // Decorative divider line
-  lines.push('q 0.13 0.40 0.22 rg 50 710 512 2 re f Q');
+  lines.push('q 0.80 0.00 0.00 rg 50 705 512 2 re f Q');
 
   // Section 1: Farmer & Field Dossier Summary
   lines.push('BT');
@@ -150,7 +163,7 @@ export function generateAndDownloadPdf(data: PdfReportData): void {
   lines.push('BT');
   lines.push('/F2 8 Tf');
   lines.push('50 40 Td');
-  lines.push(`(${pdfEscape('Official AgriSurvey Dossier Report. Confidential and Proprietary. Generated automatically.')}) Tj`);
+  lines.push(`(${pdfEscape('Official Red-Knight Technologies Pvt. Ltd. AgriSurvey Report. Confidential and Proprietary.')}) Tj`);
   lines.push('ET');
 
   const streamContent = lines.join('\n');

@@ -45,18 +45,15 @@ export const Header: React.FC<HeaderProps> = ({
           ) : (
             <>
               <img
-                alt="AgriSurvey Logo"
-                className="h-8 w-auto object-contain flex-shrink-0 cursor-pointer"
-                src={APP_ASSETS.logo}
+                alt="Red-Knight Technologies"
+                className="h-9 w-auto object-contain flex-shrink-0 cursor-pointer rounded"
+                src="/rk-logo-shield.png"
                 onClick={() => setActiveTab('home')}
               />
               <div className="flex flex-col min-w-0 cursor-pointer" onClick={() => setActiveTab('home')}>
                 <div className="flex items-center gap-1.5">
-                  <span className="font-bold text-[20px] text-primary truncate leading-tight">
-                    AgriSurvey
-                  </span>
-                  <span className="text-[11px] font-bold text-on-surface-variant bg-surface-container-high px-1.5 py-0.5 rounded">
-                    v3.4
+                  <span className="font-bold text-[18px] truncate leading-tight" style={{ color: '#CC0000' }}>
+                    Red-Knight Technologies
                   </span>
                 </div>
                 <div className="flex items-center gap-1.5 mt-0.5">
@@ -65,7 +62,7 @@ export const Header: React.FC<HeaderProps> = ({
                     <span className="relative inline-flex rounded-full h-2 w-2 bg-secondary"></span>
                   </span>
                   <span className="text-[11px] text-secondary truncate font-semibold">
-                    DB Online / Sync Ready
+                    Private Limited
                   </span>
                 </div>
               </div>
