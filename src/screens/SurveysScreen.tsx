@@ -304,112 +304,346 @@ export default function SurveysScreen({ navigation }: any) {
               <View style={styles.formCard}>
                 <Text style={styles.formTitle}>{INITIAL_MODULES.find((m) => m.id === activeModuleId)?.title}</Text>
 
+                {/* FORM 01 — FARMER / STAKEHOLDER SURVEY */}
                 {activeModuleId === 1 && (
                   <View style={styles.fieldGroup}>
-                    <Text style={styles.label}>Farmer Name</Text>
-                    <Text style={styles.valueText}>{activeSurvey?.farmerName || 'N/A'}</Text>
-                    <Text style={styles.label}>Farming Experience</Text>
-                    <TextInput style={styles.input} defaultValue="18 Years" placeholder="Years of experience" />
+                    <Text style={styles.subHeading}>Form 01 — Identification & Farmer Profile</Text>
+                    <Text style={styles.label}>Farmer / Stakeholder Name</Text>
+                    <TextInput style={styles.input} value={farmerName} onChangeText={setFarmerName} placeholder="Enter farmer name" />
+                    
+                    <View style={styles.row}>
+                      <View style={styles.halfCol}>
+                        <Text style={styles.label}>Village / Sector</Text>
+                        <TextInput style={styles.input} placeholder="e.g. Huligere" />
+                      </View>
+                      <View style={styles.halfCol}>
+                        <Text style={styles.label}>Taluk / Block</Text>
+                        <TextInput style={styles.input} placeholder="e.g. Mandya" />
+                      </View>
+                    </View>
+
+                    <View style={styles.row}>
+                      <View style={styles.halfCol}>
+                        <Text style={styles.label}>District</Text>
+                        <TextInput style={styles.input} placeholder="District name" />
+                      </View>
+                      <View style={styles.halfCol}>
+                        <Text style={styles.label}>Contact Phone</Text>
+                        <TextInput style={styles.input} keyboardType="phone-pad" placeholder="Phone number" />
+                      </View>
+                    </View>
+
+                    <Text style={styles.label}>Farming Experience (Years)</Text>
+                    <TextInput style={styles.input} keyboardType="numeric" placeholder="e.g. 15" />
+
                     <Text style={styles.label}>Farm Ownership</Text>
-                    <TextInput style={styles.input} defaultValue="Owned (8.5 Acres)" placeholder="Owned / Leased" />
+                    <TextInput style={styles.input} placeholder="Owned / Leased / Both" />
+
+                    <View style={styles.row}>
+                      <View style={styles.halfCol}>
+                        <Text style={styles.label}>Irrigated Area (ha)</Text>
+                        <TextInput style={styles.input} keyboardType="numeric" placeholder="e.g. 2.5" />
+                      </View>
+                      <View style={styles.halfCol}>
+                        <Text style={styles.label}>Rainfed Area (ha)</Text>
+                        <TextInput style={styles.input} keyboardType="numeric" placeholder="e.g. 1.0" />
+                      </View>
+                    </View>
+
+                    <Text style={styles.subHeading}>Current Practices & Constraints</Text>
+                    <Text style={styles.label}>Main Irrigation Source</Text>
+                    <TextInput style={styles.input} placeholder="Borewell / Canal / Well" />
+                    <Text style={styles.label}>Farmer Priority Problem</Text>
+                    <TextInput style={styles.input} placeholder="Describe primary farming constraint" />
+                    <Text style={styles.label}>Expected Tech / Support</Text>
+                    <TextInput style={styles.input} placeholder="Desired government / tech support" />
                   </View>
                 )}
 
+                {/* FORM 02 — FIELD SURVEY & CADASTRAL GEOMETRY */}
                 {activeModuleId === 2 && (
                   <View style={styles.fieldGroup}>
-                    <Text style={styles.label}>GPS Coordinates</Text>
+                    <Text style={styles.subHeading}>Form 02 — Field Identification & Geometry</Text>
+                    <Text style={styles.label}>Field ID / Plot Ref</Text>
+                    <TextInput style={styles.input} value={fieldId} onChangeText={setFieldId} placeholder="e.g. FLD-01" />
+
+                    <Text style={styles.label}>GPS Location Coordinates</Text>
                     <View style={styles.row}>
-                      <TextInput style={[styles.input, styles.halfInput]} value={gpsLat} onChangeText={setGpsLat} />
-                      <TextInput style={[styles.input, styles.halfInput]} value={gpsLng} onChangeText={setGpsLng} />
+                      <TextInput style={[styles.input, styles.halfInput]} value={gpsLat} onChangeText={setGpsLat} placeholder="Latitude (°N)" keyboardType="numeric" />
+                      <TextInput style={[styles.input, styles.halfInput]} value={gpsLng} onChangeText={setGpsLng} placeholder="Longitude (°E)" keyboardType="numeric" />
                     </View>
-                    <Text style={styles.label}>Altitude (MSL)</Text>
-                    <TextInput style={styles.input} value={altitude} onChangeText={setAltitude} />
+                    <Text style={styles.label}>Altitude (MSL meters)</Text>
+                    <TextInput style={styles.input} value={altitude} onChangeText={setAltitude} placeholder="Altitude in meters" keyboardType="numeric" />
+
                     <TouchableOpacity style={styles.gpsBtn} onPress={handleCaptureGps}>
                       <Ionicons name="location" size={18} color="#FFF" />
                       <Text style={styles.gpsBtnText}>Capture Current GPS Location</Text>
                     </TouchableOpacity>
+
+                    <View style={styles.row}>
+                      <View style={styles.halfCol}>
+                        <Text style={styles.label}>Field Length (m)</Text>
+                        <TextInput style={styles.input} keyboardType="numeric" placeholder="Meters" />
+                      </View>
+                      <View style={styles.halfCol}>
+                        <Text style={styles.label}>Field Width (m)</Text>
+                        <TextInput style={styles.input} keyboardType="numeric" placeholder="Meters" />
+                      </View>
+                    </View>
+
+                    <View style={styles.row}>
+                      <View style={styles.halfCol}>
+                        <Text style={styles.label}>Slope (%)</Text>
+                        <TextInput style={styles.input} keyboardType="numeric" placeholder="Slope %" />
+                      </View>
+                      <View style={styles.halfCol}>
+                        <Text style={styles.label}>Slope Direction (°)</Text>
+                        <TextInput style={styles.input} keyboardType="numeric" placeholder="e.g. 90° East" />
+                      </View>
+                    </View>
+
+                    <Text style={styles.subHeading}>Soil Surface & Drainage Condition</Text>
+                    <Text style={styles.label}>Soil Erosion Level</Text>
+                    <TextInput style={styles.input} placeholder="None / Low / Medium / High" />
+                    <Text style={styles.label}>Waterlogging Risk</Text>
+                    <TextInput style={styles.input} placeholder="None / Low / Medium / High" />
+                    <Text style={styles.label}>Natural Drainage</Text>
+                    <TextInput style={styles.input} placeholder="Poor / Moderate / Good" />
                   </View>
                 )}
 
+                {/* FORM 03 — SOIL SURVEY (PHYSICAL & CHEMICAL) */}
                 {activeModuleId === 3 && (
                   <View style={styles.fieldGroup}>
-                    <Text style={styles.label}>USDA Soil Texture</Text>
-                    <TextInput style={styles.input} defaultValue="Clay Loam" />
-                    <Text style={styles.label}>pH / EC Level</Text>
+                    <Text style={styles.subHeading}>Form 03 — Physical & Chemical Soil Testing</Text>
+                    <Text style={styles.label}>Sample ID & Depth (cm)</Text>
                     <View style={styles.row}>
-                      <TextInput style={[styles.input, styles.halfInput]} defaultValue="6.8 pH" />
-                      <TextInput style={[styles.input, styles.halfInput]} defaultValue="0.42 dS/m" />
+                      <TextInput style={[styles.input, styles.halfInput]} placeholder="Sample ID e.g. SMP-01" />
+                      <TextInput style={[styles.input, styles.halfInput]} placeholder="Depth e.g. 0-30 cm" />
+                    </View>
+
+                    <Text style={styles.label}>USDA Soil Texture Classification</Text>
+                    <TextInput style={styles.input} placeholder="e.g. Clay Loam / Sandy Clay" />
+
+                    <View style={styles.row}>
+                      <View style={styles.halfCol}>
+                        <Text style={styles.label}>Sand %</Text>
+                        <TextInput style={styles.input} keyboardType="numeric" placeholder="Sand %" />
+                      </View>
+                      <View style={styles.halfCol}>
+                        <Text style={styles.label}>Clay %</Text>
+                        <TextInput style={styles.input} keyboardType="numeric" placeholder="Clay %" />
+                      </View>
+                    </View>
+
+                    <Text style={styles.label}>Bulk Density (g/cm³)</Text>
+                    <TextInput style={styles.input} keyboardType="numeric" placeholder="e.g. 1.34" />
+
+                    <Text style={styles.subHeading}>Chemical & Nutrient Properties</Text>
+                    <View style={styles.row}>
+                      <View style={styles.halfCol}>
+                        <Text style={styles.label}>pH Level</Text>
+                        <TextInput style={styles.input} keyboardType="numeric" placeholder="e.g. 6.8" />
+                      </View>
+                      <View style={styles.halfCol}>
+                        <Text style={styles.label}>Electrical Cond (dS/m)</Text>
+                        <TextInput style={styles.input} keyboardType="numeric" placeholder="e.g. 0.42" />
+                      </View>
+                    </View>
+
+                    <View style={styles.row}>
+                      <View style={styles.halfCol}>
+                        <Text style={styles.label}>Nitrogen (N kg/ha)</Text>
+                        <TextInput style={styles.input} keyboardType="numeric" placeholder="kg/ha" />
+                      </View>
+                      <View style={styles.halfCol}>
+                        <Text style={styles.label}>Phosphorus (P kg/ha)</Text>
+                        <TextInput style={styles.input} keyboardType="numeric" placeholder="kg/ha" />
+                      </View>
+                    </View>
+
+                    <Text style={styles.label}>Potassium (K kg/ha)</Text>
+                    <TextInput style={styles.input} keyboardType="numeric" placeholder="kg/ha" />
+                  </View>
+                )}
+
+                {/* FORM 04 — WATER & HYDRAULIC SURVEY */}
+                {activeModuleId === 4 && (
+                  <View style={styles.fieldGroup}>
+                    <Text style={styles.subHeading}>Form 04 — Water Source & Hydraulic Setup</Text>
+                    <Text style={styles.label}>Water Source</Text>
+                    <TextInput style={styles.input} placeholder="Borewell / Open well / Canal / Pond / Other" />
+
+                    <View style={styles.row}>
+                      <View style={styles.halfCol}>
+                        <Text style={styles.label}>Source Depth (m)</Text>
+                        <TextInput style={styles.input} keyboardType="numeric" placeholder="Meters" />
+                      </View>
+                      <View style={styles.halfCol}>
+                        <Text style={styles.label}>Water Level (m)</Text>
+                        <TextInput style={styles.input} keyboardType="numeric" placeholder="Meters" />
+                      </View>
+                    </View>
+
+                    <View style={styles.row}>
+                      <View style={styles.halfCol}>
+                        <Text style={styles.label}>Pump Capacity (HP)</Text>
+                        <TextInput style={styles.input} keyboardType="numeric" placeholder="e.g. 7.5 HP" />
+                      </View>
+                      <View style={styles.halfCol}>
+                        <Text style={styles.label}>Discharge (L/min)</Text>
+                        <TextInput style={styles.input} keyboardType="numeric" placeholder="Liters / min" />
+                      </View>
+                    </View>
+
+                    <Text style={styles.subHeading}>Water Quality Analysis</Text>
+                    <View style={styles.row}>
+                      <View style={styles.halfCol}>
+                        <Text style={styles.label}>Water pH</Text>
+                        <TextInput style={styles.input} keyboardType="numeric" placeholder="pH" />
+                      </View>
+                      <View style={styles.halfCol}>
+                        <Text style={styles.label}>TDS (mg/L)</Text>
+                        <TextInput style={styles.input} keyboardType="numeric" placeholder="mg/L" />
+                      </View>
                     </View>
                   </View>
                 )}
 
-                {activeModuleId === 4 && (
-                  <View style={styles.fieldGroup}>
-                    <Text style={styles.label}>Water Source</Text>
-                    <TextInput style={styles.input} defaultValue="Deep Borewell (180 ft)" />
-                    <Text style={styles.label}>Pump Capacity</Text>
-                    <TextInput style={styles.input} defaultValue="7.5 HP Submersible Star-Delta" />
-                  </View>
-                )}
-
+                {/* FORM 05 — CROP & PLANT POPULATION SURVEY */}
                 {activeModuleId === 5 && (
                   <View style={styles.fieldGroup}>
-                    <Text style={styles.label}>Crop & Variety</Text>
-                    <TextInput style={styles.input} defaultValue="Sugarcane (Co-86032)" />
-                    <Text style={styles.label}>Plant Population</Text>
-                    <TextInput style={styles.input} defaultValue="62,000 canes / ha" />
+                    <Text style={styles.subHeading}>Form 05 — Crop Identification & Geometry</Text>
+                    <Text style={styles.label}>Crop & Variety / Hybrid</Text>
+                    <TextInput style={styles.input} value={crop} onChangeText={setCrop} placeholder="e.g. Sugarcane Co-86032" />
+
+                    <View style={styles.row}>
+                      <View style={styles.halfCol}>
+                        <Text style={styles.label}>Row Spacing (cm)</Text>
+                        <TextInput style={styles.input} keyboardType="numeric" placeholder="cm" />
+                      </View>
+                      <View style={styles.halfCol}>
+                        <Text style={styles.label}>Plant Spacing (cm)</Text>
+                        <TextInput style={styles.input} keyboardType="numeric" placeholder="cm" />
+                      </View>
+                    </View>
+
+                    <Text style={styles.label}>Plant Population (plants/ha)</Text>
+                    <TextInput style={styles.input} keyboardType="numeric" placeholder="e.g. 62,000" />
+
+                    <View style={styles.row}>
+                      <View style={styles.halfCol}>
+                        <Text style={styles.label}>Plant Height (cm)</Text>
+                        <TextInput style={styles.input} keyboardType="numeric" placeholder="cm" />
+                      </View>
+                      <View style={styles.halfCol}>
+                        <Text style={styles.label}>Canopy Cover (%)</Text>
+                        <TextInput style={styles.input} keyboardType="numeric" placeholder="%" />
+                      </View>
+                    </View>
+
+                    <Text style={styles.subHeading}>Yield Projections</Text>
+                    <Text style={styles.label}>Expected Yield Target (kg/ha)</Text>
+                    <TextInput style={styles.input} keyboardType="numeric" placeholder="Target kg/ha" />
                   </View>
                 )}
 
+                {/* FORM 06 — PEST & DISEASE SPATIAL SURVEY */}
                 {activeModuleId === 6 && (
                   <View style={styles.fieldGroup}>
-                    <Text style={styles.label}>Pest Observed</Text>
-                    <TextInput style={styles.input} defaultValue="Early Shoot Borer (Chilo infuscatellus)" />
-                    <Text style={styles.label}>Incidence %</Text>
-                    <TextInput style={styles.input} defaultValue="12% Low Severity" />
+                    <Text style={styles.subHeading}>Form 06 — Pest & Disease Identification</Text>
+                    <Text style={styles.label}>Pest Common Name</Text>
+                    <TextInput style={styles.input} placeholder="e.g. Early Shoot Borer" />
+
+                    <View style={styles.row}>
+                      <View style={styles.halfCol}>
+                        <Text style={styles.label}>Incidence (%)</Text>
+                        <TextInput style={styles.input} keyboardType="numeric" placeholder="%" />
+                      </View>
+                      <View style={styles.halfCol}>
+                        <Text style={styles.label}>Severity (%)</Text>
+                        <TextInput style={styles.input} keyboardType="numeric" placeholder="%" />
+                      </View>
+                    </View>
+
+                    <Text style={styles.label}>Disease Name & Causal Organism</Text>
+                    <TextInput style={styles.input} placeholder="e.g. Red Rot (Colletotrichum)" />
+
+                    <Text style={styles.label}>Control Measure Applied</Text>
+                    <TextInput style={styles.input} placeholder="Describe current management" />
                   </View>
                 )}
 
+                {/* FORM 07 — MICROCLIMATE & ATMOSPHERIC SURVEY */}
                 {activeModuleId === 7 && (
                   <View style={styles.fieldGroup}>
-                    <Text style={styles.label}>Air Temperature (°C)</Text>
-                    <TextInput style={styles.input} defaultValue="31.4 °C" />
-                    <Text style={styles.label}>Relative Humidity (%)</Text>
-                    <TextInput style={styles.input} defaultValue="64% RH" />
+                    <Text style={styles.subHeading}>Form 07 — Weather & Crop Microclimate</Text>
+                    <View style={styles.row}>
+                      <View style={styles.halfCol}>
+                        <Text style={styles.label}>Air Temperature (°C)</Text>
+                        <TextInput style={styles.input} keyboardType="numeric" placeholder="°C" />
+                      </View>
+                      <View style={styles.halfCol}>
+                        <Text style={styles.label}>Relative Humidity (%)</Text>
+                        <TextInput style={styles.input} keyboardType="numeric" placeholder="%" />
+                      </View>
+                    </View>
+
+                    <View style={styles.row}>
+                      <View style={styles.halfCol}>
+                        <Text style={styles.label}>Wind Speed (m/s)</Text>
+                        <TextInput style={styles.input} keyboardType="numeric" placeholder="m/s" />
+                      </View>
+                      <View style={styles.halfCol}>
+                        <Text style={styles.label}>Solar Rad (W/m²)</Text>
+                        <TextInput style={styles.input} keyboardType="numeric" placeholder="W/m²" />
+                      </View>
+                    </View>
+
+                    <Text style={styles.label}>Canopy Temperature (°C)</Text>
+                    <TextInput style={styles.input} keyboardType="numeric" placeholder="°C" />
                   </View>
                 )}
 
+                {/* FORM 08 — EXISTING TECHNOLOGY SURVEY */}
                 {activeModuleId === 8 && (
                   <View style={styles.fieldGroup}>
-                    <Text style={styles.label}>Soil Moisture Probe</Text>
-                    <TextInput style={styles.input} defaultValue="Capacitive LoRaWAN 865 MHz" />
-                    <Text style={styles.label}>Irrigation Automation</Text>
-                    <TextInput style={styles.input} defaultValue="Solenoid Drip Valves" />
+                    <Text style={styles.subHeading}>Form 08 — Sensors & Tech Inventory</Text>
+                    <Text style={styles.label}>Soil / Weather Sensors Present</Text>
+                    <TextInput style={styles.input} placeholder="Make / Model / Specs" />
+                    <Text style={styles.label}>Irrigation Automation Systems</Text>
+                    <TextInput style={styles.input} placeholder="Drip / Solenoids / Controller" />
+                    <Text style={styles.label}>Technology Gap Priority (1-5)</Text>
+                    <TextInput style={styles.input} placeholder="Primary tech required" />
                   </View>
                 )}
 
+                {/* FORM 09 — ECONOMIC & FINANCIAL AUDIT */}
                 {activeModuleId === 9 && (
                   <View style={styles.fieldGroup}>
+                    <Text style={styles.subHeading}>Form 09 — Farm Economics & Financials</Text>
                     <Text style={styles.label}>Gross Revenue (₹ / Ha)</Text>
-                    <TextInput style={styles.input} value={grossRevenue} onChangeText={setGrossRevenue} keyboardType="numeric" />
+                    <TextInput style={styles.input} value={grossRevenue} onChangeText={setGrossRevenue} keyboardType="numeric" placeholder="Enter revenue in ₹" />
                     <Text style={styles.label}>Input Cost (₹ / Ha)</Text>
-                    <TextInput style={styles.input} value={inputCost} onChangeText={setInputCost} keyboardType="numeric" />
+                    <TextInput style={styles.input} value={inputCost} onChangeText={setInputCost} keyboardType="numeric" placeholder="Enter input cost in ₹" />
                     <Text style={styles.label}>Labour Cost (₹ / Ha)</Text>
-                    <TextInput style={styles.input} value={labourCost} onChangeText={setLabourCost} keyboardType="numeric" />
+                    <TextInput style={styles.input} value={labourCost} onChangeText={setLabourCost} keyboardType="numeric" placeholder="Enter labour cost in ₹" />
                     <View style={styles.roiBox}>
-                      <Text style={styles.roiTitle}>Net Benefit: ₹ {netIncome.toLocaleString()}</Text>
+                      <Text style={styles.roiTitle}>Net Income Target: ₹ {netIncome.toLocaleString()}</Text>
                       <Text style={styles.roiSubtitle}>Calculated ROI: {roiPercent}% over 3 cycles</Text>
                     </View>
                   </View>
                 )}
 
+                {/* FORM 10 — TEMPORAL / CROP-CYCLE SURVEY */}
                 {activeModuleId === 10 && (
                   <View style={styles.fieldGroup}>
+                    <Text style={styles.subHeading}>Form 10 — Repeated Crop Observations</Text>
                     <Text style={styles.label}>Observation Stage</Text>
-                    <TextInput style={styles.input} value={obsStage} onChangeText={setObsStage} />
+                    <TextInput style={styles.input} value={obsStage} onChangeText={setObsStage} placeholder="e.g. Tillering / Grand Growth" />
                     <TouchableOpacity style={styles.addObsBtn} onPress={handleAddObservation}>
                       <Ionicons name="add" size={16} color="#FFF" />
-                      <Text style={styles.addObsText}>+ Add Observation Log</Text>
+                      <Text style={styles.addObsText}>+ Add Observation Log Entry</Text>
                     </TouchableOpacity>
 
                     {observations.map((item) => (
@@ -508,12 +742,14 @@ const styles = StyleSheet.create({
   moduleChipTextActive: { color: '#FFF' },
   formCard: { backgroundColor: theme.colors.surface, padding: theme.spacing.m, borderRadius: 12, marginBottom: theme.spacing.m, elevation: 1 },
   formTitle: { fontSize: 16, fontWeight: 'bold', color: theme.colors.primary, marginBottom: theme.spacing.m },
+  subHeading: { fontSize: 13, fontWeight: 'bold', color: theme.colors.primary, marginTop: 12, marginBottom: 8, borderBottomWidth: 1, borderBottomColor: theme.colors.border, paddingBottom: 4 },
   fieldGroup: { marginBottom: theme.spacing.m },
   label: { fontSize: 12, fontWeight: 'bold', color: theme.colors.textSecondary, marginBottom: 4 },
   valueText: { fontSize: 16, fontWeight: 'bold', color: theme.colors.text, marginBottom: theme.spacing.m },
   input: { height: 44, backgroundColor: '#F0F4F0', borderRadius: theme.borderRadius.m, paddingHorizontal: theme.spacing.m, marginBottom: theme.spacing.m, fontSize: 14, color: theme.colors.text },
   row: { flexDirection: 'row', justifyContent: 'space-between' },
   halfInput: { width: '48%' },
+  halfCol: { width: '48%' },
   gpsBtn: { backgroundColor: theme.colors.secondary, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 12, borderRadius: 10 },
   gpsBtnText: { color: '#FFF', fontWeight: 'bold', fontSize: 13, marginLeft: 6 },
   roiBox: { backgroundColor: '#E0F2E9', padding: theme.spacing.m, borderRadius: 10, marginTop: theme.spacing.s },
