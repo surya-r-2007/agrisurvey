@@ -1,4 +1,5 @@
 import { SurveyRecord, Farmer, FieldParcel, SoilSampleData } from '../types';
+import { RK_WATERMARK_RAW_B64 } from './watermarkBase64';
 
 export interface PdfReportData {
   docId: string;
@@ -31,6 +32,9 @@ export function generateAndDownloadPdf(data: PdfReportData): void {
 
   // Build stream content (PDF graphic/text commands)
   const lines: string[] = [];
+
+  // Red-Knight Technologies Anti-Scan Watermark Background (Full Page)
+  lines.push('q 612 0 0 792 0 0 cm /Im1 Do Q');
 
   // Company Branding Header — Red-Knight Technologies
   // Red background bar
@@ -182,9 +186,12 @@ export function generateAndDownloadPdf(data: PdfReportData): void {
   const obj2Offset = pdfParts.join('').length;
   pdfParts.push('2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n');
 
-  // Object 3: Page
+  // Decode image binary from base64
+  const imgBinary = atob(RK_WATERMARK_RAW_B64);
+
+  // Object 3: Page (references fonts and watermark image XObject Im1)
   const obj3Offset = pdfParts.join('').length;
-  pdfParts.push('3 0 obj\n<< /Type /Page /Parent 2 0 R /Resources << /Font << /F1 4 0 R /F2 5 0 R >> >> /MediaBox [0 0 612 792] /Contents 6 0 R >>\nendobj\n');
+  pdfParts.push('3 0 obj\n<< /Type /Page /Parent 2 0 R /Resources << /Font << /F1 4 0 R /F2 5 0 R >> /XObject << /Im1 7 0 R >> >> /MediaBox [0 0 612 792] /Contents 6 0 R >>\nendobj\n');
 
   // Object 4: Font F1 (Bold)
   const obj4Offset = pdfParts.join('').length;
@@ -198,9 +205,13 @@ export function generateAndDownloadPdf(data: PdfReportData): void {
   const obj6Offset = pdfParts.join('').length;
   pdfParts.push(`6 0 obj\n<< /Length ${streamLength} >>\nstream\n${streamContent}\nendstream\nendobj\n`);
 
-  // XRef Table
+  // Object 7: Watermark Background Image (Red-Knight Technologies anti-scan security watermark)
+  const obj7Offset = pdfParts.join('').length;
+  pdfParts.push(`7 0 obj\n<< /Type /XObject /Subtype /Image /Width 682 /Height 1024 /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${imgBinary.length} >>\nstream\n${imgBinary}\nendstream\nendobj\n`);
+
+  // XRef Table (8 objects: 0 to 7)
   const xrefOffset = pdfParts.join('').length;
-  pdfParts.push('xref\n0 7\n');
+  pdfParts.push('xref\n0 8\n');
   pdfParts.push('0000000000 65535 f \n');
   pdfParts.push(`${obj1Offset.toString().padStart(10, '0')} 00000 n \n`);
   pdfParts.push(`${obj2Offset.toString().padStart(10, '0')} 00000 n \n`);
@@ -208,14 +219,21 @@ export function generateAndDownloadPdf(data: PdfReportData): void {
   pdfParts.push(`${obj4Offset.toString().padStart(10, '0')} 00000 n \n`);
   pdfParts.push(`${obj5Offset.toString().padStart(10, '0')} 00000 n \n`);
   pdfParts.push(`${obj6Offset.toString().padStart(10, '0')} 00000 n \n`);
+  pdfParts.push(`${obj7Offset.toString().padStart(10, '0')} 00000 n \n`);
 
   // Trailer
-  pdfParts.push(`trailer\n<< /Size 7 /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF`);
+  pdfParts.push(`trailer\n<< /Size 8 /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF`);
 
   const fullPdfString = pdfParts.join('');
 
+  // Create Uint8Array for binary-safe PDF encoding with embedded JPEG stream
+  const uint8Array = new Uint8Array(fullPdfString.length);
+  for (let i = 0; i < fullPdfString.length; i++) {
+    uint8Array[i] = fullPdfString.charCodeAt(i) & 0xff;
+  }
+
   // Create Blob and trigger download
-  const blob = new Blob([fullPdfString], { type: 'application/pdf' });
+  const blob = new Blob([uint8Array], { type: 'application/pdf' });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
