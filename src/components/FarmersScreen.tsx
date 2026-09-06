@@ -39,8 +39,8 @@ export const FarmersScreen: React.FC<FarmersScreenProps> = ({
     phone: '',
     date: new Date().toISOString().split('T')[0],
     village: '',
-    taluk: 'Maddur',
-    district: 'Mandya District',
+    taluk: '',
+    district: '',
     totalAcres: 10.0,
     irrigatedAcres: 6.5,
     rainfedAcres: 3.5,
@@ -88,16 +88,17 @@ export const FarmersScreen: React.FC<FarmersScreenProps> = ({
       const nextNum = farmers.length + 41;
       const code = `FMR-0${nextNum}`;
       const farmId = `FRM-MDR-${nextNum}`;
+      const locationStr = [formData.village, formData.taluk, formData.district].filter(Boolean).join(', ') || 'Registered Location';
 
       onAddFarmer({
         code,
         name: formData.name,
         initials,
         phone: formData.phone || '+91 98000 00000',
-        location: `${formData.village || 'Mandya'}, ${formData.taluk}`,
-        village: formData.village || 'Mandya',
-        taluk: formData.taluk,
-        district: formData.district,
+        location: locationStr,
+        village: formData.village || 'Field Village',
+        taluk: formData.taluk || 'Local Block',
+        district: formData.district || 'Local District',
         totalAcres: Number(formData.totalAcres),
         irrigatedAcres: Number(formData.irrigatedAcres),
         rainfedAcres: Number(formData.rainfedAcres),
@@ -123,8 +124,8 @@ export const FarmersScreen: React.FC<FarmersScreenProps> = ({
         phone: '',
         date: new Date().toISOString().split('T')[0],
         village: '',
-        taluk: 'Maddur',
-        district: 'Mandya District',
+        taluk: '',
+        district: '',
         totalAcres: 10.0,
         irrigatedAcres: 6.5,
         rainfedAcres: 3.5,
@@ -370,14 +371,14 @@ export const FarmersScreen: React.FC<FarmersScreenProps> = ({
                 <div
                   className="bg-secondary h-full transition-all"
                   style={{
-                    width: `${Math.round((selectedFarmer.irrigatedAcres / selectedFarmer.totalAcres) * 100)}%`
+                    width: `${selectedFarmer.totalAcres ? Math.round((selectedFarmer.irrigatedAcres / selectedFarmer.totalAcres) * 100) : 0}%`
                   }}
                   title={`Irrigated: ${selectedFarmer.irrigatedAcres} Ac`}
                 ></div>
                 <div
                   className="bg-tertiary-fixed-dim h-full transition-all"
                   style={{
-                    width: `${Math.round((selectedFarmer.rainfedAcres / selectedFarmer.totalAcres) * 100)}%`
+                    width: `${selectedFarmer.totalAcres ? Math.round((selectedFarmer.rainfedAcres / selectedFarmer.totalAcres) * 100) : 0}%`
                   }}
                   title={`Rainfed: ${selectedFarmer.rainfedAcres} Ac`}
                 ></div>
@@ -407,7 +408,7 @@ export const FarmersScreen: React.FC<FarmersScreenProps> = ({
             <div className="p-3 bg-surface-container-low rounded-xl flex flex-col gap-1">
               <span className="text-[11px] text-on-surface-variant font-medium">Water & Farm Machinery</span>
               <div className="flex flex-wrap gap-1.5 mt-0.5">
-                {selectedFarmer.machinery.map((m, idx) => (
+                {(selectedFarmer.machinery || []).map((m, idx) => (
                   <span
                     key={idx}
                     className="px-2 py-0.5 bg-surface-container-highest rounded text-on-surface text-[11px] font-semibold"

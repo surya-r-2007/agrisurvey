@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
-import { SurveyRecord, TabType } from '../types';
+import React, { useState, useEffect } from 'react';
+import { SurveyRecord, TabType, ArchivedReport } from '../types';
 import { APP_ASSETS, INITIAL_ARCHIVE_REPORTS } from '../data/initialData';
+import { generateAndDownloadPdf } from '../utils/pdfGenerator';
 
 interface ReportsScreenProps {
   surveys: SurveyRecord[];
@@ -21,16 +22,31 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
   const [selectedCropFilter, setSelectedCropFilter] = useState('All Crops');
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState('All 10 Modules');
   const [scope, setScope] = useState<'single-survey' | 'single-field' | 'farmer-dossier' | 'cycle-report'>('single-survey');
-  const [archiveList, setArchiveList] = useState(INITIAL_ARCHIVE_REPORTS);
+  const [archiveList, setArchiveList] = useState<ArchivedReport[]>(() => {
+    try {
+      const stored = localStorage.getItem('agrisurvey_archive_reports');
+      return stored ? JSON.parse(stored) : INITIAL_ARCHIVE_REPORTS;
+    } catch {
+      return INITIAL_ARCHIVE_REPORTS;
+    }
+  });
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const [selectedPhotoPreview, setSelectedPhotoPreview] = useState<string | null>(null);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('agrisurvey_archive_reports', JSON.stringify(archiveList));
+    } catch (e) {
+      console.warn('Archive save error:', e);
+    }
+  }, [archiveList]);
 
   const safePrint = () => {
     try {
       window.print();
     } catch (err) {
       console.warn('Native print restricted in sandboxed preview:', err);
-      onShowToast('Print command prepared. Note: In embedded browser previews, native print dialogs may be sandboxed.');
+      onShowToast('Print command prepared.');
     }
   };
 
@@ -60,31 +76,57 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
     }
   };
 
+  const activeSurvey = surveys.length > 0 ? surveys[0] : null;
+
   const handleGeneratePdf = () => {
     setIsGeneratingPdf(true);
-    onShowToast('Compiling high-resolution vector PDF dossier (ISO 19115 GIS)...');
+    onShowToast('Compiling high-resolution vector PDF dossier...');
     setTimeout(() => {
       setIsGeneratingPdf(false);
-      const newReport = {
+      const docId = `RPT-AGRI-${new Date().getFullYear()}-${Math.floor(800 + Math.random() * 199)}`;
+      const newReport: ArchivedReport = {
         id: `rep-${Date.now()}`,
-        docId: `RPT-AGRI-2024-${Math.floor(800 + Math.random() * 199)}`,
-        farmerName: 'Mallikarjun Patil',
-        farmerCode: 'FMR-041',
-        plotRef: 'FLD-882',
-        crop: 'Sugarcane',
-        hectares: 4.85,
-        date: 'Exported Just now',
+        docId,
+        farmerName: activeSurvey?.farmerName || 'Registered Farmer',
+        farmerCode: 'FMR-REG-01',
+        plotRef: activeSurvey?.fieldId || 'FLD-01',
+        crop: activeSurvey?.crop || 'Sugarcane',
+        hectares: activeSurvey?.hectares || 3.5,
+        date: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
         fileSize: '4.8 MB',
         status: 'Verified & Digitally Signed'
       };
-      setArchiveList([newReport, ...archiveList]);
-      onShowToast('PDF compiled & digitally signed! Added to Report Archive.');
-      safePrint();
-    }, 1200);
+      setArchiveList((prev) => [newReport, ...prev]);
+
+      generateAndDownloadPdf({
+        docId: newReport.docId,
+        farmerName: newReport.farmerName,
+        farmerCode: newReport.farmerCode,
+        plotRef: newReport.plotRef,
+        crop: newReport.crop,
+        hectares: newReport.hectares,
+        date: newReport.date,
+        village: activeSurvey?.village || 'Huligere',
+        status: newReport.status
+      });
+
+      onShowToast(`PDF ${docId}.pdf generated & downloaded successfully!`);
+    }, 1000);
   };
 
   const handleExportDownload = () => {
-    onShowToast('Downloading RPT-AGRI-2024-882.pdf (4.8MB)...');
+    const docId = activeSurvey ? `RPT-${activeSurvey.id}` : 'RPT-AGRI-DOSSIER';
+    generateAndDownloadPdf({
+      docId,
+      farmerName: activeSurvey?.farmerName || 'Registered Farmer',
+      farmerCode: 'FMR-REG-01',
+      plotRef: activeSurvey?.fieldId || 'FLD-01',
+      crop: activeSurvey?.crop || 'Sugarcane',
+      hectares: activeSurvey?.hectares || 3.5,
+      date: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
+      village: activeSurvey?.village || 'Huligere'
+    });
+    onShowToast(`Downloading ${docId}.pdf...`);
   };
 
   const handleShare = () => {
@@ -215,10 +257,10 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
               </button>
 
               <button
-                onClick={() => onShowToast('Location: Huligere / Maddur selected')}
+                onClick={() => onShowToast('Filter by location...')}
                 className="h-8 px-3 rounded-full bg-surface-container text-on-surface text-[12px] font-semibold whitespace-nowrap flex items-center gap-1 cursor-pointer hover:bg-surface-container-high"
               >
-                <span>Huligere / Maddur</span>
+                <span>All Sectors</span>
                 <span className="material-symbols-outlined text-[14px]">location_on</span>
               </button>
             </div>
@@ -775,7 +817,19 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
                 </div>
                 <div className="flex items-center gap-1 flex-shrink-0">
                   <button
-                    onClick={() => onShowToast(`Downloading ${item.docId}.pdf...`)}
+                    onClick={() => {
+                      generateAndDownloadPdf({
+                        docId: item.docId,
+                        farmerName: item.farmerName,
+                        farmerCode: item.farmerCode,
+                        plotRef: item.plotRef,
+                        crop: item.crop,
+                        hectares: item.hectares,
+                        date: item.date,
+                        status: item.status
+                      });
+                      onShowToast(`Downloading ${item.docId}.pdf...`);
+                    }}
                     className="w-10 h-10 rounded-lg bg-surface-container flex items-center justify-center text-primary hover:bg-surface-container-high cursor-pointer"
                   >
                     <span className="material-symbols-outlined text-[20px]">download</span>

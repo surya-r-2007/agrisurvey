@@ -36,10 +36,10 @@ export const INITIAL_MODULES: SurveyModuleItem[] = [
 ];
 
 export const INITIAL_SOIL_DATA: SoilSampleData = {
-  coreId: 'SMP-001',
-  horizonDepth: '0-30 cm (Topsoil)',
-  subsamples: '0 cores logged',
-  usdaClassification: 'Unclassified (Pending Lab)',
+  coreId: '',
+  horizonDepth: '',
+  subsamples: '',
+  usdaClassification: '',
   sandPercent: 0,
   siltPercent: 0,
   clayPercent: 0,
@@ -49,27 +49,28 @@ export const INITIAL_SOIL_DATA: SoilSampleData = {
   fieldCapacity: 0,
   infiltrationRate: 0,
   ph: 7.0,
-  ec: 0.0,
-  orgCarbon: 0.0,
+  ec: 0,
+  orgCarbon: 0,
   nitrogenKgHa: 0,
-  nitrogenStatus: 'Low',
+  nitrogenStatus: 'Unset',
   phosphorusKgHa: 0,
-  phosphorusStatus: 'Low',
+  phosphorusStatus: 'Unset',
   potassiumKgHa: 0,
-  potassiumStatus: 'Low',
+  potassiumStatus: 'Unset',
   micronutrients: {
-    zn: { val: 0, status: 'Deficient' },
-    fe: { val: 0, status: 'Norm' },
-    mn: { val: 0, status: 'Norm' },
+    zn: { val: 0, status: 'Normal' },
+    fe: { val: 0, status: 'Normal' },
+    mn: { val: 0, status: 'Normal' },
     cu: { val: 0, status: 'Normal' },
     b: { val: 0, status: 'Normal' }
   },
-  compaction: 'Pending Penetrometer evaluation',
-  salinity: 'Normal',
-  rootZone: 'No active observations logged yet.',
-  photoUrl: APP_ASSETS.soilCoreSample,
-  gpsCoords: "0°00'00.0\"N 0°00'00.0\"E",
-  gpsAccuracy: '±0.05m'
+  compaction: '',
+  salinity: '',
+  rootZone: '',
+  photoUrl: '',
+  gpsCoords: '',
+  gpsAccuracy: ''
 };
 
 export const INITIAL_ARCHIVE_REPORTS: ArchivedReport[] = [];
+

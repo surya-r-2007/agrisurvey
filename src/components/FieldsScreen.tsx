@@ -34,14 +34,21 @@ export const FieldsScreen: React.FC<FieldsScreenProps> = ({
   const [altitude, setAltitude] = useState('662.4');
   const [capturedPointsCount, setCapturedPointsCount] = useState(5);
   const [showGpsSuccess, setShowGpsSuccess] = useState(false);
-  const [activeLayers, setActiveLayers] = useState({
-    polygon: true,
-    drip: true,
-    pest: true,
-    disease: true,
-    soil: true
-  });
-  const [selectedSoilPin, setSelectedSoilPin] = useState<{ id: string; depth: string; ec: string; ph: string } | null>(null);
+  const [mapMode, setMapMode] = useState<'satellite' | 'hybrid' | 'roadmap'>('satellite');
+  React.useEffect(() => {
+    if ('geolocation' in navigator) {
+      const watchId = navigator.geolocation.watchPosition(
+        (pos) => {
+          setLat(pos.coords.latitude.toFixed(6));
+          setLng(pos.coords.longitude.toFixed(6));
+          if (pos.coords.altitude) setAltitude(pos.coords.altitude.toFixed(1));
+        },
+        () => {},
+        { enableHighAccuracy: true, maximumAge: 5000 }
+      );
+      return () => navigator.geolocation.clearWatch(watchId);
+    }
+  }, []);
 
   const simulateGpsCapture = () => {
     if ('geolocation' in navigator) {
@@ -173,25 +180,10 @@ export const FieldsScreen: React.FC<FieldsScreenProps> = ({
     );
   }
 
-  React.useEffect(() => {
-    if ('geolocation' in navigator) {
-      const watchId = navigator.geolocation.watchPosition(
-        (pos) => {
-          setLat(pos.coords.latitude.toFixed(6));
-          setLng(pos.coords.longitude.toFixed(6));
-          if (pos.coords.altitude) setAltitude(pos.coords.altitude.toFixed(1));
-        },
-        () => {},
-        { enableHighAccuracy: true, maximumAge: 5000 }
-      );
-      return () => navigator.geolocation.clearWatch(watchId);
-    }
-  }, []);
-
   const numLat = parseFloat(lat) || 12.584219;
   const numLng = parseFloat(lng) || 77.042831;
-  const bbox = `${(numLng - 0.01).toFixed(6)}%2C${(numLat - 0.01).toFixed(6)}%2C${(numLng + 0.01).toFixed(6)}%2C${(numLat + 0.01).toFixed(6)}`;
-  const osmMapUrl = `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${numLat}%2C${numLng}`;
+  const mapTypeQuery = mapMode === 'satellite' ? 'k' : mapMode === 'hybrid' ? 'h' : 'm';
+  const googleSatelliteMapUrl = `https://maps.google.com/maps?q=${numLat},${numLng}&t=${mapTypeQuery}&z=17&ie=UTF8&iwloc=&output=embed`;
 
   return (
     <div className="flex flex-col w-full space-y-4 max-w-2xl mx-auto pb-16">
@@ -313,7 +305,7 @@ export const FieldsScreen: React.FC<FieldsScreenProps> = ({
           <div className="min-w-0">
             <div className="flex items-center gap-1.5 flex-wrap">
               <span className="bg-primary-container text-on-primary text-[12px] font-bold px-2.5 py-0.5 rounded-full tracking-wide">
-                {parcel.id}
+                {parcel?.id || 'FLD-001'}
               </span>
               <span className="bg-secondary-container text-on-secondary-container text-[11px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
                 <span className="w-1.5 h-1.5 rounded-full bg-secondary"></span>
@@ -321,16 +313,16 @@ export const FieldsScreen: React.FC<FieldsScreenProps> = ({
               </span>
             </div>
             <h2 className="text-[20px] font-bold text-on-surface mt-2 truncate">
-              {parcel.name.includes('FRM') ? parcel.name : `${parcel.farmId} (${parcel.owner})`}
+              {parcel?.name ? (parcel.name.includes('FRM') ? parcel.name : `${parcel.farmId || 'FRM-01'} (${parcel.owner || 'Farmer'})`) : (parcel?.farmId ? `${parcel.farmId} (${parcel.owner || 'Farmer'})` : 'New Field Plot')}
             </h2>
             <div className="flex items-center gap-1 mt-1 text-on-surface-variant text-[13px]">
               <span className="material-symbols-outlined text-[16px] text-secondary">location_on</span>
-              <span className="truncate">Huligere, Mandya District • Karnataka</span>
+              <span className="truncate">Field Location • GPS Boundary Polygon</span>
             </div>
           </div>
           <button
             aria-label="Field overview menu"
-            onClick={() => onShowToast(`Field options for ${parcel.id}`)}
+            onClick={() => onShowToast(`Field options for ${parcel?.id || 'FLD-001'}`)}
             className="w-10 h-10 flex items-center justify-center rounded-lg bg-surface-container text-on-surface-variant active:scale-95 transition-transform cursor-pointer"
             type="button"
           >
@@ -342,16 +334,16 @@ export const FieldsScreen: React.FC<FieldsScreenProps> = ({
         <div className="grid grid-cols-3 gap-2 mt-4 pt-3 bg-surface-container-low rounded-lg p-2.5 border border-outline-variant/10">
           <div className="flex flex-col">
             <span className="text-[11px] text-on-surface-variant font-medium">Gross Area</span>
-            <span className="text-[15px] font-bold text-primary mt-0.5">{parcel.hectares.toFixed(2)} Ha</span>
+            <span className="text-[15px] font-bold text-primary mt-0.5">{(parcel?.hectares ?? 2.5).toFixed(2)} Ha</span>
           </div>
           <div className="flex flex-col">
             <span className="text-[11px] text-on-surface-variant font-medium">Perimeter</span>
-            <span className="text-[15px] font-bold text-on-surface mt-0.5">{parcel.perimeterMeters} m</span>
+            <span className="text-[15px] font-bold text-on-surface mt-0.5">{parcel?.perimeterMeters ?? 640} m</span>
           </div>
           <div className="flex flex-col">
             <span className="text-[11px] text-on-surface-variant font-medium">GPS Status</span>
             <span className="text-[15px] font-bold text-secondary mt-0.5 flex items-center gap-0.5">
-              <span className="material-symbols-outlined text-[14px]">satellite_alt</span> {parcel.gpsAccuracy}
+              <span className="material-symbols-outlined text-[14px]">satellite_alt</span> {parcel?.gpsAccuracy || '±1.2m'}
             </span>
           </div>
         </div>
@@ -382,235 +374,80 @@ export const FieldsScreen: React.FC<FieldsScreenProps> = ({
         </div>
       </div>
 
-      {/* Interactive Live OpenStreetMap Display Container */}
+      {/* Interactive Google Satellite Map View Container */}
       <div className="relative w-full rounded-2xl overflow-hidden bg-surface-container-high shadow-md border border-outline-variant/20">
-        <div className="w-full h-84 relative bg-surface-container-lowest">
-          {/* Real Live OpenStreetMap Frame */}
-          <iframe
-            title="Live GPS OpenStreetMap"
-            className="w-full h-full border-0 pointer-events-auto"
-            src={osmMapUrl}
+        <div className="w-full h-84 relative bg-[#0f1715] overflow-hidden">
+          {/* Satellite Imagery Background Layer */}
+          <div 
+            className="absolute inset-0 bg-cover bg-center opacity-75 mix-blend-normal pointer-events-none" 
+            style={{ backgroundImage: `url(${APP_ASSETS.mapBackground})` }}
           />
-          {/* Topographic Graphic Layer Overlay (SVG Polygon & Spatial Assets) */}
-          <svg className="absolute inset-0 w-full h-full pointer-events-none" preserveAspectRatio="none" viewBox="0 0 380 320">
-            {/* Field Polygon Boundary */}
-            {activeLayers.polygon && (
-              <polygon
-                fill="#006c48"
-                fillOpacity="0.22"
-                points="50,45 320,30 350,225 110,280 40,190"
-                stroke="#006c48"
-                strokeDasharray="0"
-                strokeLinejoin="round"
-                strokeWidth="3.5"
-              />
-            )}
-            {/* Drip Zone A */}
-            {activeLayers.drip && (
-              <polygon
-                fill="#92f7c3"
-                fillOpacity="0.28"
-                points="65,65 210,55 190,160 80,170"
-                stroke="#00734d"
-                strokeDasharray="4,3"
-                strokeWidth="1.5"
-              />
-            )}
-            {/* Pest Zone Z2 */}
-            {activeLayers.pest && (
-              <polygon
-                fill="#ffdcc3"
-                fillOpacity="0.38"
-                points="220,70 305,60 320,130 235,140"
-                stroke="#f48c24"
-                strokeDasharray="3,3"
-                strokeWidth="2"
-              />
-            )}
-            {/* Disease Zone Z4 */}
-            {activeLayers.disease && (
-              <polygon
-                fill="#ffdad6"
-                fillOpacity="0.45"
-                points="120,200 240,185 270,250 140,265"
-                stroke="#ba1a1a"
-                strokeWidth="2"
-              />
-            )}
-            {/* Survey Boundary Corner Vertices */}
-            <circle cx="50" cy="45" fill="#012d1d" r="4.5" stroke="#ffffff" strokeWidth="2" />
-            <circle cx="320" cy="30" fill="#012d1d" r="4.5" stroke="#ffffff" strokeWidth="2" />
-            <circle cx="350" cy="225" fill="#012d1d" r="4.5" stroke="#ffffff" strokeWidth="2" />
-            <circle cx="110" cy="280" fill="#012d1d" r="4.5" stroke="#ffffff" strokeWidth="2" />
-            <circle cx="40" cy="190" fill="#012d1d" r="4.5" stroke="#ffffff" strokeWidth="2" />
-          </svg>
 
-          {/* Soil Sampling Pins (S1, S2, S3) */}
-          {activeLayers.soil && (
-            <>
-              <div
-                className="absolute left-[22%] top-[28%] -translate-x-1/2 -translate-y-full flex flex-col items-center cursor-pointer group hover:scale-110 transition-transform"
-                onClick={() =>
-                  setSelectedSoilPin({
-                    id: 'S1',
-                    depth: '0-30cm Topsoil',
-                    ec: '0.42 dS/m (Normal)',
-                    ph: '6.8 (Optimal)'
-                  })
-                }
-              >
-                <div className="bg-primary text-on-primary text-[10px] font-bold px-1.5 py-0.5 rounded-full shadow-sm">
-                  S1
-                </div>
-                <span className="material-symbols-outlined text-[26px] text-primary drop-shadow-md -mt-1" style={{ fontVariationSettings: "'FILL' 1" }}>
-                  location_on
-                </span>
-              </div>
+          {/* Embedded Live Google Maps Satellite Frame */}
+          <iframe
+            title="Google Satellite Map View"
+            className="w-full h-full border-0 pointer-events-auto relative z-0 opacity-100"
+            src={googleSatelliteMapUrl}
+          />
 
-              <div
-                className="absolute left-[48%] top-[42%] -translate-x-1/2 -translate-y-full flex flex-col items-center cursor-pointer group hover:scale-110 transition-transform"
-                onClick={() =>
-                  setSelectedSoilPin({
-                    id: 'S2',
-                    depth: '0-30cm Subsoil',
-                    ec: '0.38 dS/m (Normal)',
-                    ph: '6.9 (Optimal)'
-                  })
-                }
-              >
-                <div className="bg-primary text-on-primary text-[10px] font-bold px-1.5 py-0.5 rounded-full shadow-sm">
-                  S2
-                </div>
-                <span className="material-symbols-outlined text-[26px] text-primary drop-shadow-md -mt-1" style={{ fontVariationSettings: "'FILL' 1" }}>
-                  location_on
-                </span>
-              </div>
-
-              <div
-                className="absolute left-[32%] top-[72%] -translate-x-1/2 -translate-y-full flex flex-col items-center cursor-pointer group hover:scale-110 transition-transform"
-                onClick={() =>
-                  setSelectedSoilPin({
-                    id: 'S3',
-                    depth: '0-30cm Furrow Bottom',
-                    ec: '0.45 dS/m (Normal)',
-                    ph: '6.7 (Optimal)'
-                  })
-                }
-              >
-                <div className="bg-primary text-on-primary text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full shadow-sm">
-                  S3
-                </div>
-                <span className="material-symbols-outlined text-[26px] text-primary drop-shadow-md -mt-1" style={{ fontVariationSettings: "'FILL' 1" }}>
-                  location_on
-                </span>
-              </div>
-            </>
-          )}
-
-          {/* Spatial Layer Badges Floating on Map */}
-          {activeLayers.pest && (
-            <div className="absolute right-[18%] top-[30%] bg-surface-container-lowest/90 backdrop-blur-md rounded px-2 py-1 shadow-sm flex items-center gap-1 pointer-events-none border border-outline-variant/20">
-              <span className="w-2.5 h-2.5 rounded-xs bg-tertiary-container"></span>
-              <span className="text-[11px] font-bold text-on-surface">Pest Zone Z2</span>
-            </div>
-          )}
-
-          {activeLayers.disease && (
-            <div className="absolute right-[22%] bottom-[22%] bg-surface-container-lowest/90 backdrop-blur-md rounded px-2 py-1 shadow-sm flex items-center gap-1 pointer-events-none border border-outline-variant/20">
-              <span className="w-2.5 h-2.5 rounded-xs bg-error"></span>
-              <span className="text-[11px] font-bold text-on-surface">Disease Z4</span>
-            </div>
-          )}
-
-          {activeLayers.drip && (
-            <div className="absolute left-[14%] top-[14%] bg-surface-container-lowest/90 backdrop-blur-md rounded px-2 py-1 shadow-sm flex items-center gap-1 pointer-events-none border border-outline-variant/20">
-              <span className="w-2.5 h-2.5 rounded-xs bg-secondary"></span>
-              <span className="text-[11px] font-bold text-on-surface">Drip Zone A</span>
-            </div>
-          )}
-
-          {/* Map View Mode Controls */}
-          <div className="absolute top-3 right-3 flex flex-col gap-1.5">
+          {/* Google Maps Style Satellite Mode Controls & Center GPS */}
+          <div className="absolute top-3 right-3 flex items-center bg-surface-container-lowest/90 backdrop-blur-md p-1 rounded-xl shadow-md border border-outline-variant/20 z-20">
             <button
-              aria-label="Toggle layers"
               onClick={() => {
-                setActiveLayers((prev) => ({
-                  ...prev,
-                  drip: !prev.drip,
-                  pest: !prev.pest,
-                  disease: !prev.disease
-                }));
-                onShowToast('Toggled thematic GIS overlay layers');
+                setMapMode('satellite');
+                onShowToast('Switched to Google Maps Satellite View');
               }}
-              className="w-10 h-10 rounded-lg bg-surface-container-lowest shadow-md flex items-center justify-center text-on-surface active:scale-90 transition-transform cursor-pointer border border-outline-variant/20"
+              className={`h-8 px-2.5 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
+                mapMode === 'satellite' ? 'bg-primary text-on-primary shadow-xs' : 'text-on-surface-variant hover:text-on-surface'
+              }`}
               type="button"
             >
-              <span className="material-symbols-outlined text-[22px]">layers</span>
+              Satellite
             </button>
+            <button
+              onClick={() => {
+                setMapMode('hybrid');
+                onShowToast('Switched to Google Maps Hybrid View');
+              }}
+              className={`h-8 px-2.5 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
+                mapMode === 'hybrid' ? 'bg-primary text-on-primary shadow-xs' : 'text-on-surface-variant hover:text-on-surface'
+              }`}
+              type="button"
+            >
+              Hybrid
+            </button>
+            <button
+              onClick={() => {
+                setMapMode('roadmap');
+                onShowToast('Switched to Google Standard Map View');
+              }}
+              className={`h-8 px-2.5 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
+                mapMode === 'roadmap' ? 'bg-primary text-on-primary shadow-xs' : 'text-on-surface-variant hover:text-on-surface'
+              }`}
+              type="button"
+            >
+              Map
+            </button>
+            <div className="w-[1px] h-5 bg-outline-variant/30 mx-1"></div>
             <button
               aria-label="Center GPS"
               onClick={() => onShowToast(`Centered on current GNSS coordinate ${lat}° N, ${lng}° E`)}
-              className="w-10 h-10 rounded-lg bg-surface-container-lowest shadow-md flex items-center justify-center text-secondary active:scale-90 transition-transform cursor-pointer border border-outline-variant/20"
+              className="w-8 h-8 rounded-lg flex items-center justify-center text-secondary active:scale-90 transition-transform cursor-pointer"
               type="button"
             >
-              <span className="material-symbols-outlined text-[22px]">my_location</span>
+              <span className="material-symbols-outlined text-[20px]">my_location</span>
             </button>
           </div>
 
-          {/* Compass Indicator */}
-          <div className="absolute top-3 left-3 bg-surface-container-lowest/90 backdrop-blur-sm rounded-full w-9 h-9 flex items-center justify-center shadow-sm border border-outline-variant/20">
+          {/* Compass Rose Indicator */}
+          <div className="absolute top-3 left-3 bg-surface-container-lowest/90 backdrop-blur-sm rounded-full w-9 h-9 flex items-center justify-center shadow-sm border border-outline-variant/20 z-20">
             <div className="flex flex-col items-center text-[9px] font-bold text-error leading-none">
               <span>N</span>
               <span className="material-symbols-outlined text-[14px] text-outline -mt-0.5">navigation</span>
             </div>
           </div>
         </div>
-
-        {/* Map Legend Tray */}
-        <div className="bg-surface-container-lowest px-3 py-2.5 flex items-center justify-between overflow-x-auto text-on-surface-variant text-[11px] font-semibold border-t border-outline-variant/20">
-          <div className="flex items-center gap-1.5 flex-shrink-0">
-            <span className="w-3 h-3 rounded-full bg-primary border-2 border-surface-container-lowest shadow-xs"></span>
-            <span>Soil (S1-S3)</span>
-          </div>
-          <div className="flex items-center gap-1.5 flex-shrink-0">
-            <span className="w-3 h-3 rounded-xs bg-secondary-fixed-dim"></span>
-            <span>Irrig. Zone</span>
-          </div>
-          <div className="flex items-center gap-1.5 flex-shrink-0">
-            <span className="w-3 h-3 rounded-xs bg-tertiary-fixed"></span>
-            <span>Pest (Z2)</span>
-          </div>
-          <div className="flex items-center gap-1.5 flex-shrink-0">
-            <span className="w-3 h-3 rounded-xs bg-error-container"></span>
-            <span>Disease (Z4)</span>
-          </div>
-        </div>
       </div>
-
-      {/* Soil Pin Modal / Popup */}
-      {selectedSoilPin && (
-        <div className="bg-surface-container-lowest rounded-xl p-3.5 shadow-md border border-secondary flex items-start justify-between">
-          <div className="flex flex-col gap-1">
-            <div className="flex items-center gap-2">
-              <span className="px-2 py-0.5 bg-primary text-on-primary rounded text-[11px] font-bold">
-                Soil Node {selectedSoilPin.id}
-              </span>
-              <span className="text-[13px] font-bold text-primary">Core Profile</span>
-            </div>
-            <div className="text-[12px] text-on-surface flex gap-3 mt-1">
-              <span>Depth: <strong>{selectedSoilPin.depth}</strong></span>
-              <span>EC: <strong>{selectedSoilPin.ec}</strong></span>
-              <span>pH: <strong>{selectedSoilPin.ph}</strong></span>
-            </div>
-          </div>
-          <button
-            onClick={() => setSelectedSoilPin(null)}
-            className="text-on-surface-variant hover:text-on-surface p-1"
-          >
-            <span className="material-symbols-outlined text-[18px]">close</span>
-          </button>
-        </div>
-      )}
 
       {/* Prominent Real-time GPS Capture Card */}
       <div className="bg-surface-container-lowest rounded-xl p-pad-card shadow-sm border border-outline-variant/15">
@@ -693,26 +530,26 @@ export const FieldsScreen: React.FC<FieldsScreenProps> = ({
         <div className="grid grid-cols-2 gap-2.5">
           <div className="bg-surface-container-low p-3 rounded-lg flex flex-col border border-outline-variant/10">
             <span className="text-[11px] text-on-surface-variant font-medium">Total Calculated Area</span>
-            <span className="text-[20px] font-bold text-primary mt-1">{parcel.hectares} Ha</span>
-            <span className="text-[12px] text-on-surface-variant">{(parcel.hectares * 2.471).toFixed(2)} Acres</span>
+            <span className="text-[20px] font-bold text-primary mt-1">{parcel?.hectares ?? 2.5} Ha</span>
+            <span className="text-[12px] text-on-surface-variant">{((parcel?.hectares ?? 2.5) * 2.471).toFixed(2)} Acres</span>
           </div>
           <div className="bg-surface-container-low p-3 rounded-lg flex flex-col border border-outline-variant/10">
             <span className="text-[11px] text-on-surface-variant font-medium">Field Perimeter</span>
-            <span className="text-[20px] font-bold text-on-surface mt-1">{parcel.perimeterMeters} m</span>
+            <span className="text-[20px] font-bold text-on-surface mt-1">{parcel?.perimeterMeters ?? 640} m</span>
             <span className="text-[12px] text-on-surface-variant">Span: 280m × 150m</span>
           </div>
           <div className="bg-surface-container-low p-3 rounded-lg flex flex-col border border-outline-variant/10">
             <span className="text-[11px] text-on-surface-variant font-medium">Geometry Shape</span>
-            <span className="text-[15px] font-bold text-on-surface mt-1">{parcel.shape}</span>
+            <span className="text-[15px] font-bold text-on-surface mt-1">{parcel?.shape || 'Polygon Boundary'}</span>
             <span className="text-[12px] text-on-surface-variant">{capturedPointsCount} Closed Vertices</span>
           </div>
           <div className="bg-surface-container-low p-3 rounded-lg flex flex-col border border-outline-variant/10">
             <span className="text-[11px] text-on-surface-variant font-medium">Boundary Structure</span>
             <span className="text-[14px] font-bold text-on-surface mt-1 truncate">
-              {parcel.boundaryStructure.split('+')[0]}
+              {(parcel?.boundaryStructure || 'Living Hedge + Concrete Wall').split('+')[0]}
             </span>
             <span className="text-[12px] text-on-surface-variant truncate">
-              {parcel.boundaryStructure.split('+')[1] ? `+ ${parcel.boundaryStructure.split('+')[1]}` : 'Surveyed Wall'}
+              {(parcel?.boundaryStructure || 'Living Hedge + Concrete Wall').split('+')[1] ? `+ ${(parcel?.boundaryStructure || '').split('+')[1]}` : 'Surveyed Wall'}
             </span>
           </div>
         </div>
@@ -725,22 +562,22 @@ export const FieldsScreen: React.FC<FieldsScreenProps> = ({
               Elevation & Slope Gradient
             </span>
             <span className="text-[11px] font-bold text-on-tertiary-container bg-tertiary-fixed px-2 py-0.5 rounded">
-              {parcel.slope}
+              {parcel?.slope || '3.8% Slope'}
             </span>
           </div>
 
           <div className="flex items-center justify-between text-[12px] text-on-surface-variant pt-1">
             <div>
               <span className="text-outline text-[11px]">Highest Point:</span>
-              <span className="font-bold text-on-surface ml-1">{parcel.highestElev}</span>
+              <span className="font-bold text-on-surface ml-1">{parcel?.highestElev || '668m MSL'}</span>
             </div>
             <div className="flex items-center gap-1 text-secondary font-bold">
               <span className="material-symbols-outlined text-[16px]">east</span>
-              <span>{parcel.slopeFlow}</span>
+              <span>{parcel?.slopeFlow || 'Eastward Flow'}</span>
             </div>
             <div>
               <span className="text-outline text-[11px]">Lowest:</span>
-              <span className="font-bold text-on-surface ml-1">{parcel.lowestElev}</span>
+              <span className="font-bold text-on-surface ml-1">{parcel?.lowestElev || '657m MSL'}</span>
             </div>
           </div>
 
@@ -763,23 +600,23 @@ export const FieldsScreen: React.FC<FieldsScreenProps> = ({
         <div className="grid grid-cols-2 gap-2">
           <div className="bg-surface-container-low p-2.5 rounded-lg border border-outline-variant/10">
             <span className="text-[11px] text-on-surface-variant block font-medium">Surface Tilth</span>
-            <span className="text-[13px] text-on-surface mt-0.5 block font-bold">{parcel.surfaceTilth}</span>
-            <span className="text-[11px] text-outline">{parcel.tilthNote}</span>
+            <span className="text-[13px] text-on-surface mt-0.5 block font-bold">{parcel?.surfaceTilth || 'Loose clay loam'}</span>
+            <span className="text-[11px] text-outline">{parcel?.tilthNote || 'Calibrated boundary'}</span>
           </div>
           <div className="bg-surface-container-low p-2.5 rounded-lg border border-outline-variant/10">
             <span className="text-[11px] text-on-surface-variant block font-medium">Erosion Risk</span>
-            <span className="text-[13px] text-secondary mt-0.5 block font-bold">{parcel.erosionRisk}</span>
-            <span className="text-[11px] text-outline">{parcel.erosionNote}</span>
+            <span className="text-[13px] text-secondary mt-0.5 block font-bold">{parcel?.erosionRisk || 'Low'}</span>
+            <span className="text-[11px] text-outline">{parcel?.erosionNote || 'Bund-stabilized runoff'}</span>
           </div>
           <div className="bg-surface-container-low p-2.5 rounded-lg border border-outline-variant/10">
             <span className="text-[11px] text-on-surface-variant block font-medium">Waterlogging Hazard</span>
-            <span className="text-[13px] text-secondary mt-0.5 block font-bold">{parcel.waterlogging}</span>
-            <span className="text-[11px] text-outline">{parcel.waterloggingNote}</span>
+            <span className="text-[13px] text-secondary mt-0.5 block font-bold">{parcel?.waterlogging || 'Nil'}</span>
+            <span className="text-[11px] text-outline">{parcel?.waterloggingNote || 'Optimal percolation'}</span>
           </div>
           <div className="bg-surface-container-low p-2.5 rounded-lg border border-outline-variant/10">
             <span className="text-[11px] text-on-surface-variant block font-medium">Natural Drainage</span>
-            <span className="text-[13px] text-on-surface mt-0.5 block font-bold">{parcel.drainage}</span>
-            <span className="text-[11px] text-outline">{parcel.drainageNote}</span>
+            <span className="text-[13px] text-on-surface mt-0.5 block font-bold">{parcel?.drainage || 'Moderate'}</span>
+            <span className="text-[11px] text-outline">{parcel?.drainageNote || 'Perimeter swale equipped'}</span>
           </div>
         </div>
       </div>
@@ -802,28 +639,28 @@ export const FieldsScreen: React.FC<FieldsScreenProps> = ({
               <span className="material-symbols-outlined text-[18px] text-primary">water</span>
               Water Source
             </span>
-            <span className="font-bold text-on-surface">{parcel.waterSource}</span>
+            <span className="font-bold text-on-surface">{parcel?.waterSource || 'Deep Borewell (180 ft)'}</span>
           </div>
           <div className="py-2 flex items-center justify-between text-[13px]">
             <span className="text-on-surface-variant flex items-center gap-2">
               <span className="material-symbols-outlined text-[18px] text-primary">bolt</span>
               Pumping Unit
             </span>
-            <span className="font-bold text-on-surface">{parcel.pumpingUnit}</span>
+            <span className="font-bold text-on-surface">{parcel?.pumpingUnit || '7.5 HP Submersible'}</span>
           </div>
           <div className="py-2 flex items-center justify-between text-[13px]">
             <span className="text-on-surface-variant flex items-center gap-2">
               <span className="material-symbols-outlined text-[18px] text-primary">linear_scale</span>
               Lateral Specs
             </span>
-            <span className="font-bold text-on-surface">{parcel.lateralSpecs}</span>
+            <span className="font-bold text-on-surface">{parcel?.lateralSpecs || '16mm Inline (40cm Spacing)'}</span>
           </div>
           <div className="py-2 flex items-center justify-between text-[13px]">
             <span className="text-on-surface-variant flex items-center gap-2">
               <span className="material-symbols-outlined text-[18px] text-primary">filter_alt</span>
               Primary Filtration
             </span>
-            <span className="font-bold text-on-surface">{parcel.primaryFiltration}</span>
+            <span className="font-bold text-on-surface">{parcel?.primaryFiltration || 'Dual 2" Disc Filter'}</span>
           </div>
         </div>
       </div>

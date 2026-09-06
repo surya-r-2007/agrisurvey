@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, ErrorInfo, ReactNode } from 'react';
 import { TabType, Farmer, Farm, FieldParcel, SurveyRecord } from './types';
 import {
   INITIAL_FARMERS,
@@ -15,13 +15,81 @@ import { FieldsScreen } from './components/FieldsScreen';
 import { SurveysScreen } from './components/SurveysScreen';
 import { ReportsScreen } from './components/ReportsScreen';
 
+interface ErrorBoundaryProps {
+  children: ReactNode;
+}
+
+interface ErrorBoundaryState {
+  hasError: boolean;
+  error?: Error;
+}
+
+class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  public state: ErrorBoundaryState = {
+    hasError: false
+  };
+
+  public static getDerivedStateFromError(error: Error): ErrorBoundaryState {
+    return { hasError: true, error };
+  }
+
+  public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    console.error('AgriSurvey Uncaught Error:', error, errorInfo);
+  }
+
+  public render() {
+    const state = (this as unknown as { state: ErrorBoundaryState }).state;
+    const props = (this as unknown as { props: ErrorBoundaryProps }).props;
+    if (state?.hasError) {
+      return (
+        <div className="min-h-screen bg-surface flex flex-col items-center justify-center p-6 text-center space-y-4">
+          <div className="w-16 h-16 rounded-2xl bg-error/15 text-error flex items-center justify-center">
+            <span className="material-symbols-outlined text-[36px]">warning</span>
+          </div>
+          <h2 className="text-[22px] font-bold text-on-surface">Application UI Notice</h2>
+          <p className="text-[14px] text-on-surface-variant max-w-md">
+            {state.error?.message || 'A temporary view state error occurred. Click below to reload the GIS map and view.'}
+          </p>
+          <button
+            onClick={() => {
+              (this as unknown as { setState: (s: Partial<ErrorBoundaryState>) => void }).setState({ hasError: false, error: undefined });
+              window.location.reload();
+            }}
+            className="h-11 px-6 rounded-xl bg-primary text-on-primary text-[14px] font-bold shadow-md cursor-pointer hover:bg-primary-container"
+          >
+            Reload Application
+          </button>
+        </div>
+      );
+    }
+    return props.children;
+  }
+}
+
 export default function App() {
+  return (
+    <ErrorBoundary>
+      <MainApp />
+    </ErrorBoundary>
+  );
+}
+
+const getStorageData = <T,>(key: string, defaultValue: T): T => {
+  try {
+    const stored = localStorage.getItem(key);
+    return stored ? JSON.parse(stored) : defaultValue;
+  } catch {
+    return defaultValue;
+  }
+};
+
+function MainApp() {
   const [activeTab, setActiveTab] = useState<TabType>('home');
-  const [farmers, setFarmers] = useState<Farmer[]>(INITIAL_FARMERS);
-  const [farms, setFarms] = useState<Farm[]>(INITIAL_FARMS);
-  const [parcels, setParcels] = useState<FieldParcel[]>(INITIAL_FIELDS);
-  const [surveys, setSurveys] = useState<SurveyRecord[]>(INITIAL_SURVEYS);
-  const [selectedParcel, setSelectedParcel] = useState<FieldParcel | undefined>(INITIAL_FIELDS[0]);
+  const [farmers, setFarmers] = useState<Farmer[]>(() => getStorageData('agrisurvey_farmers', INITIAL_FARMERS));
+  const [farms, setFarms] = useState<Farm[]>(() => getStorageData('agrisurvey_farms', INITIAL_FARMS));
+  const [parcels, setParcels] = useState<FieldParcel[]>(() => getStorageData('agrisurvey_parcels', INITIAL_FIELDS));
+  const [surveys, setSurveys] = useState<SurveyRecord[]>(() => getStorageData('agrisurvey_surveys', INITIAL_SURVEYS));
+  const [selectedParcel, setSelectedParcel] = useState<FieldParcel | undefined>(() => parcels[0]);
 
   // Modals & Sheets
   const [isAddFarmerModalOpen, setIsAddFarmerModalOpen] = useState(false);
@@ -29,6 +97,39 @@ export default function App() {
   const [globalSearchQuery, setGlobalSearchQuery] = useState('');
   const [isInspectorProfileOpen, setIsInspectorProfileOpen] = useState(false);
   const [inspectorName, setInspectorName] = useState('Field Inspector');
+
+  // Persistence side-effects
+  useEffect(() => {
+    try {
+      localStorage.setItem('agrisurvey_farmers', JSON.stringify(farmers));
+    } catch (e) {
+      console.warn('Storage save error:', e);
+    }
+  }, [farmers]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('agrisurvey_farms', JSON.stringify(farms));
+    } catch (e) {
+      console.warn('Storage save error:', e);
+    }
+  }, [farms]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('agrisurvey_parcels', JSON.stringify(parcels));
+    } catch (e) {
+      console.warn('Storage save error:', e);
+    }
+  }, [parcels]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('agrisurvey_surveys', JSON.stringify(surveys));
+    } catch (e) {
+      console.warn('Storage save error:', e);
+    }
+  }, [surveys]);
 
   // Toast System
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -386,7 +487,7 @@ export default function App() {
               </div>
               <div className="p-2.5 bg-surface-container-low rounded-xl flex flex-col">
                 <span className="text-on-surface-variant">Assigned Sector</span>
-                <span className="text-[14px] font-bold text-on-surface">Maddur Taluk</span>
+                <span className="text-[14px] font-bold text-on-surface">Primary Field Sector</span>
               </div>
               <div className="p-2.5 bg-surface-container-low rounded-xl flex flex-col">
                 <span className="text-on-surface-variant">GNSS Receiver</span>
