@@ -2,7 +2,7 @@ import React, { useState, useEffect, Component, ErrorInfo, ReactNode } from 'rea
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
-import { StatusBar, Platform, View, Text, ActivityIndicator, StyleSheet, TouchableOpacity } from 'react-native';
+import { StatusBar, Platform, View, Text, ActivityIndicator, StyleSheet, TouchableOpacity, Image, Animated } from 'react-native';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Font from 'expo-font';
 import { theme } from './src/theme';
@@ -12,6 +12,10 @@ import FarmersScreen from './src/screens/FarmersScreen';
 import FieldsScreen from './src/screens/FieldsScreen';
 import SurveysScreen from './src/screens/SurveysScreen';
 import ReportsScreen from './src/screens/ReportsScreen';
+
+// Company logo assets
+const RK_LOGO_FULL = require('./assets/rk-logo-full.png');
+const RK_LOGO_SHIELD = require('./assets/rk-logo-shield.png');
 
 interface ErrorBoundaryProps {
   children: ReactNode;
@@ -57,6 +61,54 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   }
 }
 
+// Splash Screen Component — shows full RK logo for 2 seconds
+function SplashScreen({ onFinish }: { onFinish: () => void }) {
+  const fadeAnim = React.useRef(new Animated.Value(0)).current;
+  const scaleAnim = React.useRef(new Animated.Value(0.85)).current;
+
+  useEffect(() => {
+    // Fade in + scale up
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 500,
+        useNativeDriver: true,
+      }),
+      Animated.spring(scaleAnim, {
+        toValue: 1,
+        friction: 6,
+        tension: 40,
+        useNativeDriver: true,
+      }),
+    ]).start();
+
+    // After 2 seconds, fade out and finish
+    const timer = setTimeout(() => {
+      Animated.timing(fadeAnim, {
+        toValue: 0,
+        duration: 400,
+        useNativeDriver: true,
+      }).start(() => onFinish());
+    }, 2000);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  return (
+    <View style={styles.splashContainer}>
+      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+      <Animated.View style={{ opacity: fadeAnim, transform: [{ scale: scaleAnim }], alignItems: 'center' }}>
+        <Image
+          source={RK_LOGO_FULL}
+          style={styles.splashLogo}
+          resizeMode="contain"
+        />
+        <Text style={styles.splashSubtitle}>Private Limited</Text>
+      </Animated.View>
+    </View>
+  );
+}
+
 const Tab = createBottomTabNavigator();
 
 function MainNavigator() {
@@ -97,6 +149,12 @@ function MainNavigator() {
           fontWeight: 'bold',
           fontSize: 18,
         },
+        headerTitle: () => (
+          <View style={styles.headerBrand}>
+            <Image source={RK_LOGO_SHIELD} style={styles.headerLogo} resizeMode="contain" />
+            <Text style={styles.headerCompanyName}>Red-Knight Technologies</Text>
+          </View>
+        ),
         tabBarStyle: {
           height: Platform.OS === 'ios' ? 88 : Math.max(68, 56 + insets.bottom),
           paddingBottom: Math.max(10, insets.bottom),
@@ -128,6 +186,7 @@ function MainNavigator() {
 
 export default function App() {
   const [fontsLoaded, setFontsLoaded] = useState(false);
+  const [showSplash, setShowSplash] = useState(true);
 
   useEffect(() => {
     async function prepareFonts() {
@@ -150,6 +209,10 @@ export default function App() {
     );
   }
 
+  if (showSplash) {
+    return <SplashScreen onFinish={() => setShowSplash(false)} />;
+  }
+
   return (
     <ErrorBoundary>
       <SafeAreaProvider>
@@ -163,6 +226,39 @@ export default function App() {
 }
 
 const styles = StyleSheet.create({
+  splashContainer: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  splashLogo: {
+    width: 280,
+    height: 180,
+  },
+  splashSubtitle: {
+    fontSize: 14,
+    color: '#666',
+    fontWeight: '500',
+    marginTop: 8,
+    letterSpacing: 2,
+    textTransform: 'uppercase',
+  },
+  headerBrand: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  headerLogo: {
+    width: 32,
+    height: 32,
+    borderRadius: 4,
+  },
+  headerCompanyName: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#FF1A1A',
+  },
   loadingContainer: {
     flex: 1,
     backgroundColor: theme.colors.background,

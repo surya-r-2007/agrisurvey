@@ -2,6 +2,7 @@ import { SoilSampleData } from '../types';
 import { Platform } from 'react-native';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
+import { RK_LOGO_FULL_BASE64 } from './logoBase64';
 
 export interface PdfReportData {
   docId: string;
@@ -28,6 +29,11 @@ export async function generateAndDownloadPdf(data: PdfReportData): Promise<void>
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <style>
           body { font-family: Helvetica, Arial, sans-serif; padding: 24px; color: #1c1b1f; line-height: 1.4; }
+          .logo-header { display: flex; align-items: center; justify-content: center; padding: 16px 0; margin-bottom: 16px; border-bottom: 3px solid #CC0000; }
+          .logo-header img { height: 70px; width: auto; }
+          .logo-header .company-text { margin-left: 12px; }
+          .logo-header .company-name { font-size: 18px; font-weight: bold; color: #CC0000; margin: 0; }
+          .logo-header .company-sub { font-size: 10px; color: #666; margin: 2px 0 0 0; letter-spacing: 1px; }
           .header { border-bottom: 3px solid #216c2a; padding-bottom: 12px; margin-bottom: 20px; }
           .title { font-size: 20px; font-weight: bold; color: #1c1b1f; margin: 0; }
           .subtitle { font-size: 11px; color: #44483e; margin-top: 4px; }
@@ -42,9 +48,8 @@ export async function generateAndDownloadPdf(data: PdfReportData): Promise<void>
         </style>
       </head>
       <body>
-        <div class="header">
-          <div class="title">AGRISURVEY - COMPLIANCE & EVALUATION DOSSIER</div>
-          <div class="subtitle">Document Ref: ${docTitle} | Generated: ${data.date} | ISO 19115 GIS Certified</div>
+        <div class="logo-header">
+          <img src="${RK_LOGO_FULL_BASE64}" alt="Red-Knight Technologies" />
         </div>
 
         <div class="section-title">1. FARMER & FIELD PARCEL OVERVIEW</div>
