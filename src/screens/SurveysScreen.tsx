@@ -17,10 +17,10 @@ import { useStore } from '../store/useStore';
 import { SurveyRecord, SurveyModuleItem } from '../types';
 
 const INITIAL_MODULES: SurveyModuleItem[] = [
-  { id: 1, title: '1. Farmer / Stakeholder Survey', status: 'Completed', icon: 'person' },
-  { id: 2, title: '2. Field Survey & Geometry', status: 'Completed', icon: 'map' },
-  { id: 3, title: '3. Soil Survey (Physical & Chemical)', status: 'Active', icon: 'analytics' },
-  { id: 4, title: '4. Water & Hydraulic Survey', status: 'Draft (70%)', icon: 'water' },
+  { id: 1, title: '1. Farmer / Stakeholder Survey', status: 'Not Started', icon: 'person' },
+  { id: 2, title: '2. Field Survey & Geometry', status: 'Not Started', icon: 'map' },
+  { id: 3, title: '3. Soil Survey (Physical & Chemical)', status: 'Not Started', icon: 'analytics' },
+  { id: 4, title: '4. Water & Hydraulic Survey', status: 'Not Started', icon: 'water' },
   { id: 5, title: '5. Crop & Plant Population', status: 'Not Started', icon: 'leaf' },
   { id: 6, title: '6. Pest / Disease & Spatial Zones', status: 'Not Started', icon: 'bug' },
   { id: 7, title: '7. Microclimate & Atmospheric', status: 'Not Started', icon: 'partly-sunny' },
@@ -43,22 +43,19 @@ export default function SurveysScreen({ navigation }: any) {
   const [fieldId, setFieldId] = useState('');
 
   // Form 02 GPS
-  const [gpsLat, setGpsLat] = useState('12.584219');
-  const [gpsLng, setGpsLng] = useState('77.042831');
-  const [altitude, setAltitude] = useState('662.4');
+  const [gpsLat, setGpsLat] = useState('');
+  const [gpsLng, setGpsLng] = useState('');
+  const [altitude, setAltitude] = useState('');
 
   // Form 09 Economic Inputs
-  const [grossRevenue, setGrossRevenue] = useState('352000');
-  const [inputCost, setInputCost] = useState('118000');
-  const [labourCost, setLabourCost] = useState('42000');
+  const [grossRevenue, setGrossRevenue] = useState('');
+  const [inputCost, setInputCost] = useState('');
+  const [labourCost, setLabourCost] = useState('');
 
   // Form 10 Temporal Observations
-  const [observations, setObservations] = useState([
-    { id: '1', date: '2026-08-15', stage: 'Tillering', temp: '31°C', health: 'Optimal' },
-    { id: '2', date: '2026-08-30', stage: 'Grand Growth', temp: '29°C', health: 'Vigorous' }
-  ]);
-  const [obsDate, setObsDate] = useState('2026-09-05');
-  const [obsStage, setObsStage] = useState('Grand Growth');
+  const [observations, setObservations] = useState<{ id: string; date: string; stage: string; temp: string; health: string }[]>([]);
+  const [obsDate, setObsDate] = useState(new Date().toISOString().split('T')[0]);
+  const [obsStage, setObsStage] = useState('Vegetative');
 
   const activeSurvey = selectedSurveyId
     ? surveys.find((s) => s.id === selectedSurveyId) || surveys[0]

@@ -1,8 +1,9 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../theme';
 import { useStore } from '../store/useStore';
+import { generateAndDownloadPdf } from '../utils/pdfGenerator';
 
 export default function ReportsScreen() {
   const { surveys } = useStore();
@@ -11,6 +12,22 @@ export default function ReportsScreen() {
   const drafts = surveys.filter(s => s.status === 'Draft').length;
   const flagged = surveys.filter(s => s.status === 'Flagged').length;
   const total = surveys.length || 1; // avoid div by 0
+
+  const handleDownloadReport = (survey: any) => {
+    generateAndDownloadPdf({
+      docId: `RPT-${survey.id}`,
+      farmerName: survey.farmerName || 'Registered Farmer',
+      farmerCode: 'FMR-REG-01',
+      plotRef: survey.fieldId || 'FLD-01',
+      crop: survey.crop || 'Sugarcane',
+      hectares: survey.hectares || 3.5,
+      date: survey.auditedDate || new Date().toLocaleDateString(),
+      status: survey.status
+    });
+    if (Platform.OS !== 'web') {
+      Alert.alert('Report PDF Generated', `PDF Dossier for ${survey.id} generated successfully.`);
+    }
+  };
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
@@ -56,25 +73,30 @@ export default function ReportsScreen() {
       <View style={styles.card}>
         <View style={styles.cardHeader}>
           <Text style={styles.cardTitle}>Recent Reports</Text>
-          <TouchableOpacity>
-            <Text style={styles.linkText}>See All</Text>
-          </TouchableOpacity>
         </View>
         
-        {surveys.slice(0, 3).map(survey => (
-          <View key={survey.id} style={styles.reportRow}>
-            <View style={styles.reportIcon}>
-              <Ionicons name="document-text" size={20} color={theme.colors.primary} />
-            </View>
-            <View style={styles.reportInfo}>
-              <Text style={styles.reportName}>Dossier {survey.id}</Text>
-              <Text style={styles.reportDate}>{survey.auditedDate} • {survey.farmerName}</Text>
-            </View>
-            <TouchableOpacity style={styles.downloadBtn}>
-              <Ionicons name="download-outline" size={18} color={theme.colors.secondary} />
-            </TouchableOpacity>
+        {surveys.length === 0 ? (
+          <View style={styles.emptyContainer}>
+            <Ionicons name="document-text-outline" size={36} color={theme.colors.textSecondary} />
+            <Text style={styles.emptyText}>No survey reports recorded yet.</Text>
+            <Text style={styles.emptySubText}>Create a new survey to generate PDF dossiers.</Text>
           </View>
-        ))}
+        ) : (
+          surveys.slice(0, 5).map(survey => (
+            <View key={survey.id} style={styles.reportRow}>
+              <View style={styles.reportIcon}>
+                <Ionicons name="document-text" size={20} color={theme.colors.primary} />
+              </View>
+              <View style={styles.reportInfo}>
+                <Text style={styles.reportName}>Dossier {survey.id}</Text>
+                <Text style={styles.reportDate}>{survey.auditedDate || survey.timeOrDate} • {survey.farmerName}</Text>
+              </View>
+              <TouchableOpacity style={styles.downloadBtn} onPress={() => handleDownloadReport(survey)}>
+                <Ionicons name="download-outline" size={18} color={theme.colors.secondary} />
+              </TouchableOpacity>
+            </View>
+          ))
+        )}
       </View>
     </ScrollView>
   );
@@ -100,5 +122,8 @@ const styles = StyleSheet.create({
   reportInfo: { flex: 1 },
   reportName: { fontSize: 14, fontWeight: 'bold', color: theme.colors.text },
   reportDate: { fontSize: 12, color: theme.colors.textSecondary, marginTop: 2 },
-  downloadBtn: { padding: 8 }
+  downloadBtn: { padding: 8 },
+  emptyContainer: { alignItems: 'center', justifyContent: 'center', paddingVertical: 20 },
+  emptyText: { fontSize: 14, fontWeight: 'bold', color: theme.colors.text, marginTop: 8 },
+  emptySubText: { fontSize: 12, color: theme.colors.textSecondary, marginTop: 4, textAlign: 'center' }
 });

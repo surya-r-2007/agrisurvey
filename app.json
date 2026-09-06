@@ -37,7 +37,8 @@
           "locationWhenInUsePermission": "AgriSurvey needs your location to map field parcels and audit crop coordinates.",
           "locationAlwaysAndWhenInUsePermission": "AgriSurvey needs your location to map field parcels and audit crop coordinates."
         }
-      ]
+      ],
+      "expo-sharing"
     ]
   }
 }
