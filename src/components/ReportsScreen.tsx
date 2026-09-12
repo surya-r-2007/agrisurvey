@@ -76,14 +76,16 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
     }
   };
 
-  const activeSurvey = surveys.length > 0 ? surveys[0] : null;
+  const [selectedSurveyId, setSelectedSurveyId] = useState<string | null>(null);
+
+  const activeSurvey = (selectedSurveyId ? surveys.find((s) => s.id === selectedSurveyId) : null) || (surveys.length > 0 ? surveys[0] : null);
 
   const handleGeneratePdf = () => {
     setIsGeneratingPdf(true);
     onShowToast('Compiling high-resolution vector PDF dossier...');
     setTimeout(() => {
       setIsGeneratingPdf(false);
-      const docId = `RPT-AGRI-${new Date().getFullYear()}-${Math.floor(800 + Math.random() * 199)}`;
+      const docId = activeSurvey ? `RPT-${activeSurvey.id}` : `RPT-AGRI-${new Date().getFullYear()}-${Math.floor(800 + Math.random() * 199)}`;
       const newReport: ArchivedReport = {
         id: `rep-${Date.now()}`,
         docId,
@@ -92,9 +94,9 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
         plotRef: activeSurvey?.fieldId || 'FLD-01',
         crop: activeSurvey?.crop || 'Sugarcane',
         hectares: activeSurvey?.hectares || 3.5,
-        date: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
+        date: activeSurvey?.auditedDate || new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
         fileSize: '4.8 MB',
-        status: 'Verified & Digitally Signed'
+        status: activeSurvey?.status ? `${activeSurvey.status} & Digitally Signed` : 'Verified & Digitally Signed'
       };
       setArchiveList((prev) => [newReport, ...prev]);
 
@@ -107,11 +109,16 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
         hectares: newReport.hectares,
         date: newReport.date,
         village: activeSurvey?.village || 'Huligere',
-        status: newReport.status
+        status: newReport.status,
+        statusDetail: activeSurvey?.statusDetail || '10-Module Evaluation',
+        ph: activeSurvey?.ph,
+        moisturePercent: activeSurvey?.moisturePercent,
+        completedModules: activeSurvey?.completedModules,
+        totalModules: activeSurvey?.totalModules
       });
 
       onShowToast(`PDF ${docId}.pdf generated & downloaded successfully!`);
-    }, 1000);
+    }, 800);
   };
 
   const handleExportDownload = () => {
@@ -123,8 +130,14 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
       plotRef: activeSurvey?.fieldId || 'FLD-01',
       crop: activeSurvey?.crop || 'Sugarcane',
       hectares: activeSurvey?.hectares || 3.5,
-      date: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
-      village: activeSurvey?.village || 'Huligere'
+      date: activeSurvey?.auditedDate || new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
+      village: activeSurvey?.village || 'Huligere',
+      status: activeSurvey?.status || 'Completed',
+      statusDetail: activeSurvey?.statusDetail || '10-Module Evaluation',
+      ph: activeSurvey?.ph,
+      moisturePercent: activeSurvey?.moisturePercent,
+      completedModules: activeSurvey?.completedModules,
+      totalModules: activeSurvey?.totalModules
     });
     onShowToast(`Downloading ${docId}.pdf...`);
   };
@@ -407,7 +420,10 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
                   <div className="flex items-center justify-between pt-1 gap-1">
                     <div className="flex items-center gap-1">
                       <button
-                        onClick={() => setSubTab('generator')}
+                        onClick={() => {
+                          setSelectedSurveyId(survey.id);
+                          setSubTab('generator');
+                        }}
                         className="h-9 px-3 rounded-lg bg-surface-container text-[12px] font-semibold text-on-surface flex items-center gap-1 hover:bg-surface-container-high transition-colors cursor-pointer"
                       >
                         <span className="material-symbols-outlined text-[16px]">visibility</span>
@@ -431,23 +447,47 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
                       </button>
                     </div>
 
-                    {survey.status === 'Completed' ? (
+                    <div className="flex items-center gap-1">
                       <button
-                        onClick={() => setSubTab('generator')}
+                        onClick={() => {
+                          const docId = `RPT-${survey.id}`;
+                          generateAndDownloadPdf({
+                            docId,
+                            farmerName: survey.farmerName,
+                            farmerCode: 'FMR-REG-01',
+                            plotRef: survey.fieldId,
+                            crop: survey.crop,
+                            hectares: survey.hectares || 3.5,
+                            date: survey.auditedDate || survey.timeOrDate,
+                            village: survey.village,
+                            status: survey.status,
+                            statusDetail: survey.statusDetail || '10-Module Evaluation',
+                            ph: survey.ph,
+                            moisturePercent: survey.moisturePercent,
+                            completedModules: survey.completedModules,
+                            totalModules: survey.totalModules
+                          });
+                          onShowToast(`Downloading PDF for ${survey.id}...`);
+                        }}
                         className="h-9 px-3 rounded-lg bg-primary text-on-primary text-[12px] font-bold flex items-center gap-1.5 shadow-sm hover:bg-primary/90 cursor-pointer"
+                        title="Download Survey Dossier PDF"
                       >
-                        <span className="material-symbols-outlined text-[16px]">picture_as_pdf</span>
-                        <span>Gen PDF</span>
+                        <span className="material-symbols-outlined text-[16px]">download</span>
+                        <span>PDF</span>
                       </button>
-                    ) : (
-                      <button
-                        onClick={() => onShowToast('Resuming survey...')}
-                        className="h-9 px-4 rounded-lg bg-secondary text-on-secondary text-[12px] font-bold flex items-center gap-1.5 shadow-sm hover:bg-secondary/90 cursor-pointer"
-                      >
-                        <span className="material-symbols-outlined text-[16px]">play_arrow</span>
-                        <span>Resume</span>
-                      </button>
-                    )}
+                      {survey.status !== 'Completed' && (
+                        <button
+                          onClick={() => {
+                            onNavigate('surveys');
+                            onShowToast(`Resuming survey ${survey.id}...`);
+                          }}
+                          className="h-9 px-3 rounded-lg bg-secondary text-on-secondary text-[12px] font-bold flex items-center gap-1.5 shadow-sm hover:bg-secondary/90 cursor-pointer"
+                        >
+                          <span className="material-symbols-outlined text-[16px]">play_arrow</span>
+                          <span>Resume</span>
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
               ))
@@ -515,6 +555,27 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
             </div>
           </div>
 
+          {/* Survey Selector Picker */}
+          {surveys.length > 1 && (
+            <div className="flex items-center justify-between p-3 bg-surface-container-lowest rounded-xl border border-outline-variant/15 shadow-xs">
+              <span className="text-[12px] font-bold text-on-surface flex items-center gap-1.5">
+                <span className="material-symbols-outlined text-[16px] text-primary">assignment</span>
+                <span>Select Survey Dossier:</span>
+              </span>
+              <select
+                value={activeSurvey?.id || ''}
+                onChange={(e) => setSelectedSurveyId(e.target.value)}
+                className="h-8 px-2.5 rounded-lg bg-surface-container text-[12px] font-bold text-primary border border-outline-variant/30 outline-none cursor-pointer"
+              >
+                {surveys.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.id} — {s.farmerName} ({s.crop})
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
           {/* Live Document Preview Container (Agricultural Audit Specimen) */}
           <div className="relative bg-surface-container-lowest rounded-2xl p-4 shadow-md space-y-4 border border-outline-variant/15">
             {/* Dossier Document Header */}
@@ -538,9 +599,9 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
                 </h2>
                 <div className="flex items-center justify-between text-on-primary-container text-[12px]">
                   <span>
-                    Doc ID: <span className="font-semibold text-surface-bright">RPT-AGRI-2024-882</span>
+                    Doc ID: <span className="font-semibold text-surface-bright">{activeSurvey ? `RPT-${activeSurvey.id}` : 'RPT-AGRI-2026-882'}</span>
                   </span>
-                  <span>Generated: Oct 12, 2024</span>
+                  <span>Generated: {activeSurvey?.auditedDate || activeSurvey?.date || new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
                 </div>
               </div>
             </div>
@@ -552,19 +613,19 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
                   Farmer / Operator
                 </span>
                 <span className="text-[14px] font-bold block">
-                  {surveys[0]?.farmerName || 'No Active Survey Selected'}
+                  {activeSurvey?.farmerName || 'No Active Survey Selected'}
                 </span>
                 <span className="text-[11px] text-on-surface-variant block">
-                  {surveys[0] ? `ID: ${surveys[0].id}` : 'Select a survey to populate'}
+                  {activeSurvey ? `ID: ${activeSurvey.id}` : 'Select a survey to populate'}
                 </span>
               </div>
               <div>
                 <span className="text-[11px] text-on-surface-variant font-medium block">Plot Reference</span>
                 <span className="text-[14px] font-bold block">
-                  {surveys[0] ? `${surveys[0].fieldId} (${surveys[0].village})` : 'Unassigned Plot'}
+                  {activeSurvey ? `${activeSurvey.fieldId} (${activeSurvey.village})` : 'Unassigned Plot'}
                 </span>
                 <span className="text-[11px] text-on-surface-variant block">
-                  {surveys[0] ? `Crop: ${surveys[0].crop}` : 'Acreage: Pending Survey'}
+                  {activeSurvey ? `Crop: ${activeSurvey.crop} · ${activeSurvey.hectares || 3.5} Ha` : 'Acreage: Pending Survey'}
                 </span>
               </div>
             </div>

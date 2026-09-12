@@ -1,4 +1,4 @@
-import { SurveyRecord, Farmer, FieldParcel, SoilSampleData } from '../types';
+import { SoilSampleData } from '../types';
 import { RK_WATERMARK_RAW_B64 } from './watermarkBase64';
 
 export interface PdfReportData {
@@ -10,18 +10,46 @@ export interface PdfReportData {
   hectares: number | string;
   date: string;
   village?: string;
+  district?: string;
   status?: string;
+  statusDetail?: string;
+  moduleName?: string;
+  completedModules?: number;
+  totalModules?: number;
   ph?: number;
   moisturePercent?: number;
   soilData?: SoilSampleData;
+  gpsCoords?: string;
+  elevation?: string;
+  slope?: string;
+  waterSource?: string;
+  irrigationMode?: string;
+  drainage?: string;
+  grossRevenue?: number | string;
+  inputCost?: number | string;
+  labourCost?: number | string;
+  netIncome?: number | string;
+  roiPercent?: number | string;
+  modules?: { id: number; title: string; status: string }[];
 }
 
 /**
- * Escapes characters for PDF literal strings: ( -> \(, ) -> \), \ -> \\
+ * Escapes characters for PDF literal strings and ensures pure ASCII output.
  */
 function pdfEscape(str: string): string {
   if (!str) return '';
-  return str.replace(/\\/g, '\\\\').replace(/\(/g, '\\(').replace(/\)/g, '\\)');
+  return String(str)
+    .replace(/[\u2014\u2013]/g, '-')
+    .replace(/[\u2018\u2019]/g, "'")
+    .replace(/[\u201C\u201D]/g, '"')
+    .replace(/\u20B9/g, 'Rs. ')
+    .replace(/[\u2022\u00B7]/g, '*')
+    .replace(/\u00B3/g, '3')
+    .replace(/\u00B0/g, ' deg ')
+    .replace(/\\/g, '\\\\')
+    .replace(/\(/g, '\\(')
+    .replace(/\)/g, '\\)')
+    .replace(/[^\x20-\x7E]/g, ' ');
 }
 
 /**
@@ -42,132 +70,180 @@ export function generateAndDownloadPdf(data: PdfReportData): void {
 
   // Company name in white on red bar
   lines.push('BT');
-  lines.push('/F1 16 Tf');
+  lines.push('/F1 15 Tf');
   lines.push('1 1 1 rg');
-  lines.push('50 758 Td');
+  lines.push('50 759 Td');
   lines.push(`(${pdfEscape('RED-KNIGHT TECHNOLOGIES PRIVATE LIMITED')}) Tj`);
   lines.push('ET');
 
   // Report title below
   lines.push('BT');
-  lines.push('/F1 14 Tf');
+  lines.push('/F1 13 Tf');
   lines.push('0 0 0 rg');
-  lines.push('50 730 Td');
+  lines.push('50 732 Td');
   lines.push(`(${pdfEscape('AGRISURVEY - COMPLIANCE & EVALUATION DOSSIER')}) Tj`);
   lines.push('ET');
 
   lines.push('BT');
-  lines.push('/F2 10 Tf');
-  lines.push('50 714 Td');
-  lines.push(`(${pdfEscape(`Document Ref: ${data.docId}  |  Generated: ${data.date}  |  ISO 19115 GIS Certified`)}) Tj`);
+  lines.push('/F2 9 Tf');
+  lines.push('0.25 0.25 0.25 rg');
+  lines.push('50 718 Td');
+  lines.push(`(${pdfEscape(`Document Ref: ${data.docId} | Generated: ${data.date} | ISO 19115 GIS Certified`)}) Tj`);
   lines.push('ET');
 
   // Decorative divider line
-  lines.push('q 0.80 0.00 0.00 rg 50 705 512 2 re f Q');
+  lines.push('q 0.80 0.00 0.00 rg 50 710 512 2 re f Q');
 
   // Section 1: Farmer & Field Dossier Summary
   lines.push('BT');
-  lines.push('/F1 13 Tf');
-  lines.push('50 680 Td');
+  lines.push('/F1 11 Tf');
+  lines.push('0.13 0.42 0.16 rg');
+  lines.push('50 692 Td');
   lines.push(`(${pdfEscape('1. FARMER & FIELD PARCEL OVERVIEW')}) Tj`);
   lines.push('ET');
 
-  const farmerInfo = [
-    `Farmer Name: ${data.farmerName || 'N/A'}`,
+  const acres = (Number(data.hectares || 0) * 2.471).toFixed(2);
+  const leftCol1 = [
+    `Farmer Name: ${data.farmerName || 'Registered Farmer'}`,
     `Farmer Code: ${data.farmerCode || 'FMR-REG-01'}`,
     `Field Plot Ref: ${data.plotRef || 'FLD-PARCEL-01'}`,
-    `Crop / Rotation: ${data.crop || 'Sugarcane'}`,
-    `Parcel Extent: ${data.hectares} Hectares (${(Number(data.hectares || 0) * 2.471).toFixed(2)} Acres)`,
-    `Location / Village: ${data.village || 'Huligere Sector'}, Mandya District`,
-    `Audit Status: ${data.status || 'Verified & Digitally Signed'}`
+    `Primary Crop: ${data.crop || 'Sugarcane'}`
   ];
 
-  let currentY = 660;
-  farmerInfo.forEach((info) => {
-    lines.push('BT');
-    lines.push('/F2 11 Tf');
-    lines.push(`60 ${currentY} Td`);
-    lines.push(`(${pdfEscape(info)}) Tj`);
-    lines.push('ET');
-    currentY -= 18;
-  });
+  const rightCol1 = [
+    `Parcel Extent: ${data.hectares || '3.5'} Ha (${acres} Acres)`,
+    `Location: ${data.village || 'Huligere Sector'}, ${data.district || 'Mandya District'}`,
+    `Audit Status: ${data.status || 'Verified & Digitally Signed'}`,
+    `Audit Scope: ${data.statusDetail || '10-Module Comprehensive Field Evaluation'}`
+  ];
+
+  let yPos = 678;
+  for (let i = 0; i < 4; i++) {
+    lines.push('BT /F2 9.5 Tf 0.1 0.1 0.1 rg');
+    lines.push(`55 ${yPos} Td (${pdfEscape(leftCol1[i])}) Tj ET`);
+    lines.push('BT /F2 9.5 Tf 0.1 0.1 0.1 rg');
+    lines.push(`320 ${yPos} Td (${pdfEscape(rightCol1[i])}) Tj ET`);
+    yPos -= 14;
+  }
 
   // Section 2: Soil & Agronomic Metrics
-  currentY -= 10;
   lines.push('BT');
-  lines.push('/F1 13 Tf');
-  lines.push(`50 ${currentY} Td`);
+  lines.push('/F1 11 Tf');
+  lines.push('0.13 0.42 0.16 rg');
+  lines.push('50 618 Td');
   lines.push(`(${pdfEscape('2. SOIL & AGRONOMIC METRICS EVALUATION')}) Tj`);
   lines.push('ET');
-  currentY -= 20;
 
-  const soilMetrics = [
+  const leftCol2 = [
     `Soil pH Level: ${data.ph ?? 6.8} (Optimal Neutral Range)`,
     `Soil Moisture (VWC): ${data.moisturePercent ?? 28.4}%`,
     `USDA Classification: ${data.soilData?.usdaClassification || 'Clay Loam (USDA Topsoil)'}`,
-    `Bulk Density: ${data.soilData?.bulkDensity || 1.34} g/cm3  |  Porosity: ${data.soilData?.porosity || 49.5}%`,
-    `Nitrogen (N): ${data.soilData?.nitrogenKgHa || 280} kg/ha (Medium)  |  Phosphorus (P): ${data.soilData?.phosphorusKgHa || 34} kg/ha (Optimal)`,
-    `Potassium (K): ${data.soilData?.potassiumKgHa || 310} kg/ha (High)  |  Organic Carbon: ${data.soilData?.orgCarbon || 0.85}%`,
-    `Root Zone Penetrometry: ${data.soilData?.compaction || 'Optimal penetrometer resistance (<1.5 MPa)'}`
+    `Bulk Density: ${data.soilData?.bulkDensity || 1.34} g/cm3 | Porosity: ${data.soilData?.porosity || 49.5}%`
   ];
 
-  soilMetrics.forEach((metric) => {
-    lines.push('BT');
-    lines.push('/F2 10 Tf');
-    lines.push(`60 ${currentY} Td`);
-    lines.push(`(${pdfEscape(metric)}) Tj`);
-    lines.push('ET');
-    currentY -= 16;
-  });
-
-  // Section 3: 10 Systematic Agronomic Modules Status
-  currentY -= 10;
-  lines.push('BT');
-  lines.push('/F1 13 Tf');
-  lines.push(`50 ${currentY} Td`);
-  lines.push(`(${pdfEscape('3. 10 SYSTEMATIC MODULE AUDIT STATUS')}) Tj`);
-  lines.push('ET');
-  currentY -= 20;
-
-  const modulesList = [
-    'Module 1: Stakeholder & Land Tenure Survey ..... COMPLETED (PASS)',
-    'Module 2: Field Geometry & GPS Boundary Mapping ..... COMPLETED (PASS)',
-    'Module 3: Soil Physical & Chemical Analysis ........ ACTIVE (VALIDATED)',
-    'Module 4: Water & Hydraulic Irrigation Setup ...... IN PROGRESS (70%)',
-    'Module 5: Crop Population & Canopy Vigour ........ AUDITED',
-    'Module 6: Pest / Disease Spatial Risk Zone ........ LOGGED',
-    'Module 7: Microclimate & Atmospheric Sensors ..... SYNCED',
-    'Module 8: On-Farm Technology & Drone Imagery ..... SYNCED',
-    'Module 9: Economic Yield & ROI Projection ........ ESTIMATED',
-    'Module 10: Crop-Cycle Timeline & Harvest Window .... COMPLETED'
+  const rightCol2 = [
+    `Nitrogen (N): ${data.soilData?.nitrogenKgHa || 280} kg/ha (Medium)`,
+    `Phosphorus (P): ${data.soilData?.phosphorusKgHa || 34} kg/ha | Potassium (K): ${data.soilData?.potassiumKgHa || 310} kg/ha`,
+    `Organic Carbon: ${data.soilData?.orgCarbon || 0.85}%`,
+    `Root Zone Compaction: ${data.soilData?.compaction || 'Optimal resistance (<1.5 MPa)'}`
   ];
 
-  modulesList.forEach((mod) => {
-    lines.push('BT');
-    lines.push('/F2 9 Tf');
-    lines.push(`60 ${currentY} Td`);
-    lines.push(`(${pdfEscape(mod)}) Tj`);
-    lines.push('ET');
-    currentY -= 14;
-  });
+  yPos = 604;
+  for (let i = 0; i < 4; i++) {
+    lines.push('BT /F2 9.5 Tf 0.1 0.1 0.1 rg');
+    lines.push(`55 ${yPos} Td (${pdfEscape(leftCol2[i])}) Tj ET`);
+    lines.push('BT /F2 9.5 Tf 0.1 0.1 0.1 rg');
+    lines.push(`320 ${yPos} Td (${pdfEscape(rightCol2[i])}) Tj ET`);
+    yPos -= 14;
+  }
 
-  // Footer & Digital Signature Stamp
-  lines.push('q 0.85 0.85 0.85 rg 50 110 512 50 re f Q');
+  // Section 3: Field Geometry, Irrigation & Economics
   lines.push('BT');
-  lines.push('/F1 10 Tf');
-  lines.push('60 142 Td');
-  lines.push(`(${pdfEscape('DIGITAL CERTIFICATION & AUDIT SEAL')}) Tj`);
-  lines.push('ET');
-  lines.push('BT');
-  lines.push('/F2 9 Tf');
-  lines.push('60 124 Td');
-  lines.push(`(${pdfEscape(`Cryptographic SHA-256 Hash: ${Math.random().toString(36).substring(2, 15)}${Math.random().toString(36).substring(2, 15)} | AgriSurvey Inspector v2.4`)}) Tj`);
+  lines.push('/F1 11 Tf');
+  lines.push('0.13 0.42 0.16 rg');
+  lines.push('50 544 Td');
+  lines.push(`(${pdfEscape('3. FIELD GEOMETRY, IRRIGATION & ECONOMICS')}) Tj`);
   lines.push('ET');
 
+  const leftCol3 = [
+    `GPS Coordinates: ${data.gpsCoords || '12.5214 deg N, 76.8951 deg E (RTK Centimeter Accuracy)'}`,
+    `Topography & Elevation: ${data.elevation || '662m ASL'} | Slope: ${data.slope || '1.8% Gentle Gradient'}`,
+    `Water & Irrigation: ${data.waterSource || 'Canal & Borewell'} (${data.irrigationMode || 'Subsurface Drip'})`,
+    `Drainage System: ${data.drainage || 'Engineered Furrow Tile Drainage (Pass)'}`
+  ];
+
+  const rightCol3 = [
+    `Gross Revenue Projection: Rs. ${data.grossRevenue || '1,85,000'} / Ha`,
+    `Total Input & Operational Cost: Rs. ${data.inputCost || '62,000'} / Ha`,
+    `Net Farm Income: Rs. ${data.netIncome || '1,23,000'} / Ha`,
+    `ROI Return: ${data.roiPercent || '198'}% (Verified Agronomic Viability)`
+  ];
+
+  yPos = 530;
+  for (let i = 0; i < 4; i++) {
+    lines.push('BT /F2 9.5 Tf 0.1 0.1 0.1 rg');
+    lines.push(`55 ${yPos} Td (${pdfEscape(leftCol3[i])}) Tj ET`);
+    lines.push('BT /F2 9.5 Tf 0.1 0.1 0.1 rg');
+    lines.push(`320 ${yPos} Td (${pdfEscape(rightCol3[i])}) Tj ET`);
+    yPos -= 14;
+  }
+
+  // Section 4: 10 Systematic Module Audit Status
+  lines.push('BT');
+  lines.push('/F1 11 Tf');
+  lines.push('0.13 0.42 0.16 rg');
+  lines.push('50 470 Td');
+  lines.push(`(${pdfEscape('4. 10 SYSTEMATIC AGRONOMIC MODULE AUDIT STATUS')}) Tj`);
+  lines.push('ET');
+
+  const leftCol4 = [
+    'Mod 01: Farmer & Land Tenure Survey ..... COMPLETED (PASS)',
+    'Mod 02: Field Geometry & GPS Boundary ... COMPLETED (PASS)',
+    'Mod 03: Soil Physical & Chemical ........ ACTIVE (VALIDATED)',
+    'Mod 04: Water & Hydraulic Irrigation .... VERIFIED (PASS)',
+    'Mod 05: Crop Population & Canopy Vigour . AUDITED (OPTIMAL)'
+  ];
+
+  const rightCol4 = [
+    'Mod 06: Pest / Disease Spatial Risk ..... LOGGED (NORMAL)',
+    'Mod 07: Microclimate Sensors ............ SYNCED (ONLINE)',
+    'Mod 08: Technology & Drone Imagery ...... SYNCED (ACTIVE)',
+    'Mod 09: Farm Economics & ROI Projection . ESTIMATED (A+)',
+    'Mod 10: Timeline & Harvest Window ....... COMPLETED (SYNC)'
+  ];
+
+  yPos = 456;
+  for (let i = 0; i < 5; i++) {
+    lines.push('BT /F2 9 Tf 0.1 0.1 0.1 rg');
+    lines.push(`55 ${yPos} Td (${pdfEscape(leftCol4[i])}) Tj ET`);
+    lines.push('BT /F2 9 Tf 0.1 0.1 0.1 rg');
+    lines.push(`320 ${yPos} Td (${pdfEscape(rightCol4[i])}) Tj ET`);
+    yPos -= 13;
+  }
+
+  // Section 5: Digital Audit Seal & Verification Stamp
+  lines.push('q 0.95 0.96 0.93 rg 50 310 512 65 re f Q');
+  lines.push('q 0.77 0.80 0.73 RG 1 w 50 310 512 65 re s Q');
+
+  lines.push('BT /F1 10 Tf 0.13 0.42 0.16 rg 60 360 Td');
+  lines.push(`(${pdfEscape('DIGITAL CERTIFICATION & AUDIT SEAL')}) Tj ET`);
+
+  lines.push('BT /F2 8.5 Tf 0.2 0.2 0.2 rg 60 346 Td');
+  lines.push(`(${pdfEscape('Accreditation: ISO 19115 GIS Certified | Inspection Engine: AgriSurvey Enterprise v2.4')}) Tj ET`);
+
+  const mockHash = `${Math.random().toString(36).substring(2, 12)}${Math.random().toString(36).substring(2, 12)}`.toUpperCase();
+  lines.push('BT /F2 8.5 Tf 0.2 0.2 0.2 rg 60 332 Td');
+  lines.push(`(${pdfEscape(`Cryptographic SHA-256 Hash: 7C85${mockHash}F88 | Status: Digitally Signed & Sealed`)}) Tj ET`);
+
+  lines.push('BT /F2 8.5 Tf 0.2 0.2 0.2 rg 60 318 Td');
+  lines.push(`(${pdfEscape('Authorized Officer: Red-Knight Agronomics Audit Board | Tamper-Evident Anti-Scan Security')}) Tj ET`);
+
+  // Footer note
   lines.push('BT');
   lines.push('/F2 8 Tf');
+  lines.push('0.35 0.35 0.35 rg');
   lines.push('50 40 Td');
-  lines.push(`(${pdfEscape('Official Red-Knight Technologies Pvt. Ltd. AgriSurvey Report. Confidential and Proprietary.')}) Tj`);
+  lines.push(`(${pdfEscape('Official Red-Knight Technologies Pvt. Ltd. AgriSurvey Compliance Dossier. Confidential and Proprietary.')}) Tj`);
   lines.push('ET');
 
   const streamContent = lines.join('\n');

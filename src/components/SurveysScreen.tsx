@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { SurveyModuleItem, SoilSampleData, TabType, SurveyRecord, FieldParcel, Farmer } from '../types';
 import { INITIAL_MODULES, INITIAL_SOIL_DATA } from '../data/initialData';
+import { generateAndDownloadPdf } from '../utils/pdfGenerator';
 
 interface SurveysScreenProps {
   surveys?: SurveyRecord[];
@@ -339,8 +340,37 @@ export const SurveysScreen: React.FC<SurveysScreenProps> = ({
                 <span className="font-semibold text-on-surface">{activeSurvey.farmerName}</span>
               </p>
             </div>
-            <div className="flex flex-col items-end flex-shrink-0">
-              <span className="text-[16px] font-bold text-primary">{progressPercent}%</span>
+            <div className="flex flex-col items-end flex-shrink-0 gap-1">
+              <div className="flex items-center gap-2">
+                <span className="text-[16px] font-bold text-primary">{progressPercent}%</span>
+                <button
+                  onClick={() => {
+                    const docId = `RPT-${activeSurvey.id}`;
+                    generateAndDownloadPdf({
+                      docId,
+                      farmerName: activeSurvey.farmerName,
+                      farmerCode: 'FMR-REG-01',
+                      plotRef: activeSurvey.fieldId,
+                      crop: activeSurvey.crop,
+                      hectares: activeSurvey.hectares || 3.5,
+                      date: activeSurvey.auditedDate || activeSurvey.date || activeSurvey.timeOrDate,
+                      village: activeSurvey.village,
+                      status: activeSurvey.status,
+                      statusDetail: activeSurvey.statusDetail || '10-Module Evaluation',
+                      ph: activeSurvey.ph,
+                      moisturePercent: activeSurvey.moisturePercent,
+                      completedModules: completedModulesCount,
+                      totalModules: 10
+                    });
+                    onShowToast(`Downloading PDF for ${activeSurvey.id}...`);
+                  }}
+                  className="h-7 px-2.5 rounded-lg bg-primary text-on-primary text-[11px] font-bold flex items-center gap-1 shadow-xs hover:bg-primary/90 cursor-pointer"
+                  title="Download Survey PDF"
+                >
+                  <span className="material-symbols-outlined text-[14px]">download</span>
+                  <span>PDF</span>
+                </button>
+              </div>
               <span className="text-[11px] text-on-surface-variant font-medium">{completedModulesCount} of 10 Done</span>
             </div>
           </div>
