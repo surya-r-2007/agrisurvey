@@ -2,6 +2,7 @@ import { SoilSampleData, GeotaggedPhoto } from '../types';
 import { Platform } from 'react-native';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
+import * as FileSystem from 'expo-file-system';
 import { RK_LOGO_FULL_BASE64 } from './logoBase64';
 import { RK_WATERMARK_BASE64 } from './watermarkBase64';
 
@@ -42,6 +43,28 @@ export async function generateAndDownloadPdf(data: PdfReportData): Promise<void>
   const docTitle = data.docId || 'RPT-AGRI-SURVEY';
   const acres = (Number(data.hectares || 0) * 2.471).toFixed(2);
   const mockHash = `${Math.random().toString(36).substring(2, 12)}${Math.random().toString(36).substring(2, 12)}`.toUpperCase();
+
+  // Ensure all photos are resolved to base64 so native print WebViews render them flawlessly
+  const resolvedPhotos: GeotaggedPhoto[] = await Promise.all(
+    (data.photos || []).map(async (photo) => {
+      if (photo.base64) return photo;
+      if (photo.uri && Platform.OS !== 'web' && (photo.uri.startsWith('file://') || photo.uri.startsWith('/'))) {
+        try {
+          const b64 = await FileSystem.readAsStringAsync(photo.uri, {
+            encoding: FileSystem.EncodingType.Base64
+          });
+          return {
+            ...photo,
+            base64: `data:image/jpeg;base64,${b64}`
+          };
+        } catch (e) {
+          console.warn('Could not read photo to base64 for PDF:', e);
+          return photo;
+        }
+      }
+      return photo;
+    })
+  );
 
   const htmlContent = `
     <!DOCTYPE html>
@@ -325,10 +348,10 @@ export async function generateAndDownloadPdf(data: PdfReportData): Promise<void>
           </tbody>
         </table>
 
-        ${data.photos && data.photos.length > 0 ? `
-        <div class="section-title">5. Geotagged Photographic Audit Evidence (${data.photos.length})</div>
+        ${resolvedPhotos && resolvedPhotos.length > 0 ? `
+        <div class="section-title">5. Geotagged Photographic Audit Evidence (${resolvedPhotos.length})</div>
         <div class="photo-grid">
-          ${data.photos.map((p, i) => `
+          ${resolvedPhotos.map((p, i) => `
             <div class="photo-card">
               <img src="${p.base64 || p.uri}" class="photo-img" alt="Geotagged Photo ${i + 1}" />
               <div class="photo-meta">

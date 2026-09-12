@@ -268,6 +268,13 @@ export default function SurveysScreen({ navigation }: any) {
 
   // PDF Generation
   const handleDownloadPdf = (survey: SurveyRecord) => {
+    const allPhotos = [
+      ...(survey.photos || []),
+      ...(survey.form02?.photos || []),
+      ...(survey.form03?.photos || []),
+      ...(survey.form06?.photos || [])
+    ];
+
     generateAndDownloadPdf({
       docId: `RPT-${survey.id}`,
       farmerName: survey.farmerName,
@@ -289,7 +296,8 @@ export default function SurveysScreen({ navigation }: any) {
       inputCost: survey.form09?.totalInputCostInr ? `₹${survey.form09.totalInputCostInr}` : undefined,
       labourCost: survey.form09?.labourCostInr ? `₹${survey.form09.labourCostInr}` : undefined,
       netIncome: survey.form09?.netIncomeInr ? `₹${survey.form09.netIncomeInr}` : undefined,
-      roiPercent: survey.form09?.techEconomics?.roiPercent ? `${survey.form09.techEconomics.roiPercent}%` : undefined
+      roiPercent: survey.form09?.techEconomics?.roiPercent ? `${survey.form09.techEconomics.roiPercent}%` : undefined,
+      photos: allPhotos
     });
 
     if (Platform.OS !== 'web') {
