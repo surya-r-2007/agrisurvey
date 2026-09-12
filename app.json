@@ -13,7 +13,9 @@
       "package": "com.suryar.agrisurvey",
       "permissions": [
         "ACCESS_COARSE_LOCATION",
-        "ACCESS_FINE_LOCATION"
+        "ACCESS_FINE_LOCATION",
+        "CAMERA",
+        "READ_MEDIA_IMAGES"
       ],
       "adaptiveIcon": {
         "foregroundImage": "./assets/icon.png",
@@ -36,6 +38,13 @@
         {
           "locationWhenInUsePermission": "AgriSurvey needs your location to map field parcels and audit crop coordinates.",
           "locationAlwaysAndWhenInUsePermission": "AgriSurvey needs your location to map field parcels and audit crop coordinates."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "AgriSurvey needs access to your photos to attach field inspection images.",
+          "cameraPermission": "AgriSurvey needs camera access to capture geotagged photos of fields, crops, and soil profiles."
         }
       ],
       "expo-sharing"

@@ -1,4 +1,5 @@
-import { Farmer, Farm, FieldParcel, SurveyRecord, SurveyModuleItem, SoilSampleData, ArchivedReport } from '../types';
+import { Farmer, Farm, FieldParcel, SurveyRecord, SurveyModuleItem, SoilSurveyData, ArchivedReport } from '../types';
+import { createDefaultForm03 } from './formDefaults';
 
 export const APP_ASSETS = {
   logo: 'https://lh3.googleusercontent.com/aida/AEtjO1VMJQypEdYzrtwgC0R9wd8XLaqmlrMbh4gHU76mqqCQsyptaKKcgmlqeG2rjoiLmtmNt5HlEqLMf6L53ej4MxGT_SvwGBYzRhLUhSjPJTo1-IBqwLmuBcYz64S0ByQsNgxdbV3m7zO8-UZ872tPoDVXbT9NBk6hS03HRuMEWksO37-LpL7EYCpMClRo2kOZr9WdNxIb4zy4WrpO2CNsbg0j4AGjXl73u_vTId5zChaohFmfO8gDChyzgIU',
@@ -15,11 +16,8 @@ export const APP_ASSETS = {
 };
 
 export const INITIAL_FARMERS: Farmer[] = [];
-
 export const INITIAL_FARMS: Farm[] = [];
-
 export const INITIAL_FIELDS: FieldParcel[] = [];
-
 export const INITIAL_SURVEYS: SurveyRecord[] = [];
 
 export const INITIAL_MODULES: SurveyModuleItem[] = [
@@ -35,42 +33,5 @@ export const INITIAL_MODULES: SurveyModuleItem[] = [
   { id: 10, title: '10. Crop-Cycle Timeline', status: 'Not Started', icon: 'radio_button_unchecked' }
 ];
 
-export const INITIAL_SOIL_DATA: SoilSampleData = {
-  coreId: '',
-  horizonDepth: '',
-  subsamples: '',
-  usdaClassification: '',
-  sandPercent: 0,
-  siltPercent: 0,
-  clayPercent: 0,
-  bulkDensity: 0,
-  porosity: 0,
-  soilMoistureVwc: 0,
-  fieldCapacity: 0,
-  infiltrationRate: 0,
-  ph: 7.0,
-  ec: 0,
-  orgCarbon: 0,
-  nitrogenKgHa: 0,
-  nitrogenStatus: 'Unset',
-  phosphorusKgHa: 0,
-  phosphorusStatus: 'Unset',
-  potassiumKgHa: 0,
-  potassiumStatus: 'Unset',
-  micronutrients: {
-    zn: { val: 0, status: 'Normal' },
-    fe: { val: 0, status: 'Normal' },
-    mn: { val: 0, status: 'Normal' },
-    cu: { val: 0, status: 'Normal' },
-    b: { val: 0, status: 'Normal' }
-  },
-  compaction: '',
-  salinity: '',
-  rootZone: '',
-  photoUrl: '',
-  gpsCoords: '',
-  gpsAccuracy: ''
-};
-
+export const INITIAL_SOIL_DATA: SoilSurveyData = createDefaultForm03('', '');
 export const INITIAL_ARCHIVE_REPORTS: ArchivedReport[] = [];
-

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -8,16 +8,46 @@ import {
   Modal,
   TextInput,
   ScrollView,
-  Alert
+  Alert,
+  Platform
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import * as Location from 'expo-location';
 import { theme } from '../theme';
 import { useStore } from '../store/useStore';
-import { SurveyRecord, SurveyModuleItem } from '../types';
+import {
+  SurveyRecord,
+  SurveyModuleItem,
+  LocationHierarchySelection
+} from '../types';
+import { generateAndDownloadPdf } from '../utils/pdfGenerator';
+import LocationSelector from '../components/LocationSelector';
+import {
+  Form01Farmer,
+  Form02Field,
+  Form03Soil,
+  Form04Water,
+  Form05Crop,
+  Form06PestDisease,
+  Form07Microclimate,
+  Form08Technology,
+  Form09Economic,
+  Form10Temporal
+} from '../components/forms';
+import {
+  createDefaultForm01,
+  createDefaultForm02,
+  createDefaultForm03,
+  createDefaultForm04,
+  createDefaultForm05,
+  createDefaultForm06,
+  createDefaultForm07,
+  createDefaultForm08,
+  createDefaultForm09,
+  createDefaultForm10
+} from '../data/formDefaults';
 
-const INITIAL_MODULES: SurveyModuleItem[] = [
-  { id: 1, title: '1. Farmer / Stakeholder Survey', status: 'Not Started', icon: 'person' },
+const MODULE_DEFINITIONS: SurveyModuleItem[] = [
+  { id: 1, title: '1. Farmer / Stakeholder Survey', status: 'Active', icon: 'person' },
   { id: 2, title: '2. Field Survey & Geometry', status: 'Not Started', icon: 'map' },
   { id: 3, title: '3. Soil Survey (Physical & Chemical)', status: 'Not Started', icon: 'analytics' },
   { id: 4, title: '4. Water & Hydraulic Survey', status: 'Not Started', icon: 'water' },
@@ -30,120 +60,244 @@ const INITIAL_MODULES: SurveyModuleItem[] = [
 ];
 
 export default function SurveysScreen({ navigation }: any) {
-  const { surveys, farmers, parcels, addSurvey, updateSurvey } = useStore();
+  const { surveys, addSurvey, updateSurvey, deleteSurvey } = useStore();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedSurveyId, setSelectedSurveyId] = useState<string | null>(null);
   const [activeModuleId, setActiveModuleId] = useState<number>(1);
   const [isReviewing, setIsReviewing] = useState(false);
 
-  // Form State for New Survey Modal
-  const [farmerName, setFarmerName] = useState('');
-  const [crop, setCrop] = useState('Sugarcane');
-  const [fieldId, setFieldId] = useState('');
+  // Modal State for Initiating New Survey
+  const [newFarmerName, setNewFarmerName] = useState('');
+  const [newCrop, setNewCrop] = useState('');
+  const [newFieldId, setNewFieldId] = useState('');
+  const [newLocation, setNewLocation] = useState<LocationHierarchySelection>({
+    districtId: '',
+    districtName: '',
+    talukId: '',
+    talukName: '',
+    villageId: '',
+    villageName: ''
+  });
 
-  // Form 02 GPS
-  const [gpsLat, setGpsLat] = useState('');
-  const [gpsLng, setGpsLng] = useState('');
-  const [altitude, setAltitude] = useState('');
+  // Active Survey Resolution
+  const activeSurvey = useMemo(() => {
+    if (selectedSurveyId) {
+      return surveys.find((s) => s.id === selectedSurveyId) || null;
+    }
+    return surveys[0] || null;
+  }, [selectedSurveyId, surveys]);
 
-  // Form 09 Economic Inputs
-  const [grossRevenue, setGrossRevenue] = useState('');
-  const [inputCost, setInputCost] = useState('');
-  const [labourCost, setLabourCost] = useState('');
+  // Ensure active survey has all 10 forms initialized
+  const initializedActiveSurvey = useMemo(() => {
+    if (!activeSurvey) return null;
+    let modified = false;
+    const surveyCopy: SurveyRecord = { ...activeSurvey };
 
-  // Form 10 Temporal Observations
-  const [observations, setObservations] = useState<{ id: string; date: string; stage: string; temp: string; health: string }[]>([]);
-  const [obsDate, setObsDate] = useState(new Date().toISOString().split('T')[0]);
-  const [obsStage, setObsStage] = useState('Vegetative');
+    const sId = surveyCopy.id;
+    const dateStr = surveyCopy.auditedDate || surveyCopy.timeOrDate;
+    const fId = surveyCopy.fieldId;
+    const fName = surveyCopy.farmerName;
+    const cropStr = surveyCopy.crop;
 
-  const activeSurvey = selectedSurveyId
-    ? surveys.find((s) => s.id === selectedSurveyId) || surveys[0]
-    : surveys[0];
+    if (!surveyCopy.form01) {
+      surveyCopy.form01 = createDefaultForm01(sId, dateStr, fName);
+      if (surveyCopy.locationHierarchy) {
+        surveyCopy.form01.district = surveyCopy.locationHierarchy.districtName;
+        surveyCopy.form01.districtId = surveyCopy.locationHierarchy.districtId;
+        surveyCopy.form01.taluk = surveyCopy.locationHierarchy.talukName;
+        surveyCopy.form01.talukId = surveyCopy.locationHierarchy.talukId;
+        surveyCopy.form01.village = surveyCopy.locationHierarchy.villageName;
+        surveyCopy.form01.villageId = surveyCopy.locationHierarchy.villageId;
+      }
+      modified = true;
+    }
+    if (!surveyCopy.form02) {
+      surveyCopy.form02 = createDefaultForm02(sId, fId);
+      modified = true;
+    }
+    if (!surveyCopy.form03) {
+      surveyCopy.form03 = createDefaultForm03(sId, fId);
+      modified = true;
+    }
+    if (!surveyCopy.form04) {
+      surveyCopy.form04 = createDefaultForm04(sId, fId);
+      modified = true;
+    }
+    if (!surveyCopy.form05) {
+      surveyCopy.form05 = createDefaultForm05(sId, fId, cropStr);
+      modified = true;
+    }
+    if (!surveyCopy.form06) {
+      surveyCopy.form06 = createDefaultForm06(sId, fId, cropStr);
+      modified = true;
+    }
+    if (!surveyCopy.form07) {
+      surveyCopy.form07 = createDefaultForm07(sId, fId);
+      modified = true;
+    }
+    if (!surveyCopy.form08) {
+      surveyCopy.form08 = createDefaultForm08();
+      modified = true;
+    }
+    if (!surveyCopy.form09) {
+      surveyCopy.form09 = createDefaultForm09();
+      modified = true;
+    }
+    if (!surveyCopy.form10) {
+      surveyCopy.form10 = createDefaultForm10(sId, fId, cropStr);
+      modified = true;
+    }
 
+    if (modified) {
+      setTimeout(() => updateSurvey(surveyCopy), 0);
+    }
+
+    return surveyCopy;
+  }, [activeSurvey, updateSurvey]);
+
+  // Handler for creating new survey dossier
   const handleInitSurvey = () => {
-    if (!farmerName.trim()) {
-      Alert.alert('Validation Required', 'Please select or enter a farmer name');
+    if (!newFarmerName.trim()) {
+      Alert.alert('Validation Error', 'Please enter Farmer / Stakeholder Name.');
       return;
     }
-    const dateStr = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
-    const newSurvey: SurveyRecord = {
-      id: `SRV-${Date.now().toString().slice(-6)}`,
+    if (!newCrop.trim()) {
+      Alert.alert('Validation Error', 'Please enter Crop name.');
+      return;
+    }
+    if (!newLocation.districtName || !newLocation.talukName || !newLocation.villageName) {
+      Alert.alert('Validation Error', 'Please select District, Taluk/Block, and Village.');
+      return;
+    }
+
+    const dateStr = new Date().toLocaleDateString('en-GB');
+    const sId = `SRV-${Date.now().toString().slice(-6)}`;
+    const fId = newFieldId.trim() || `FLD-${Date.now().toString().slice(-4)}`;
+
+    const form01 = createDefaultForm01(sId, dateStr, newFarmerName.trim());
+    form01.district = newLocation.districtName;
+    form01.districtId = newLocation.districtId;
+    form01.taluk = newLocation.talukName;
+    form01.talukId = newLocation.talukId;
+    form01.village = newLocation.villageName;
+    form01.villageId = newLocation.villageId;
+
+    const newRecord: SurveyRecord = {
+      id: sId,
       timeOrDate: dateStr,
-      farmerName: farmerName.trim(),
-      crop: crop || 'Sugarcane',
-      fieldId: fieldId || 'FLD-01',
-      village: 'Field Sector',
+      farmerName: newFarmerName.trim(),
+      crop: newCrop.trim(),
+      fieldId: fId,
+      village: newLocation.villageName,
+      taluk: newLocation.talukName,
+      district: newLocation.districtName,
       auditedDate: dateStr,
       status: 'Draft',
-      statusDetail: '10-Module Evaluation',
-      moduleName: 'Full Agron-Audit V2',
+      statusDetail: '10-Module Full Field Survey',
+      moduleName: 'Comprehensive Agron Audit',
       completedModules: 1,
       totalModules: 10,
-      stepProgress: '1/10 Modules'
+      stepProgress: '1/10 Modules',
+      locationHierarchy: newLocation,
+      form01,
+      form02: createDefaultForm02(sId, fId),
+      form03: createDefaultForm03(sId, fId),
+      form04: createDefaultForm04(sId, fId),
+      form05: createDefaultForm05(sId, fId, newCrop.trim()),
+      form06: createDefaultForm06(sId, fId, newCrop.trim()),
+      form07: createDefaultForm07(sId, fId),
+      form08: createDefaultForm08(),
+      form09: createDefaultForm09(),
+      form10: createDefaultForm10(sId, fId, newCrop.trim()),
     };
 
-    addSurvey(newSurvey);
-    setSelectedSurveyId(newSurvey.id);
+    addSurvey(newRecord);
+    setSelectedSurveyId(newRecord.id);
+    setActiveModuleId(1);
     setIsModalOpen(false);
-    setFarmerName('');
-    setFieldId('');
-    Alert.alert('Survey Dossier Initiated', `Dossier ${newSurvey.id} created successfully.`);
+
+    // Reset modal fields
+    setNewFarmerName('');
+    setNewCrop('');
+    setNewFieldId('');
+    setNewLocation({
+      districtId: '',
+      districtName: '',
+      talukId: '',
+      talukName: '',
+      villageId: '',
+      villageName: ''
+    });
+
+    Alert.alert('Survey Dossier Created', `Dossier ${newRecord.id} initiated successfully.`);
   };
 
-  const handleCaptureGps = async () => {
-    try {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') {
-        Alert.alert(
-          'Location Permission Denied',
-          'Permission to access location was denied. Please enable location permissions in app settings.'
-        );
-        return;
-      }
+  // Generic updater for specific form within initialized survey
+  const handleUpdateForm = (formKey: keyof SurveyRecord, formVal: any) => {
+    if (!initializedActiveSurvey) return;
+    const updatedRecord: SurveyRecord = {
+      ...initializedActiveSurvey,
+      [formKey]: formVal
+    };
 
-      let currentLoc: Location.LocationObject | null = null;
-      try {
-        currentLoc = await Location.getCurrentPositionAsync({
-          accuracy: Location.Accuracy.High,
-        });
-      } catch (e) {
-        currentLoc = await Location.getLastKnownPositionAsync({});
+    // If updating form01, sync farmerName and crop if modified
+    if (formKey === 'form01') {
+      updatedRecord.farmerName = formVal.farmerName || updatedRecord.farmerName;
+      if (formVal.district) updatedRecord.district = formVal.district;
+      if (formVal.taluk) updatedRecord.taluk = formVal.taluk;
+      if (formVal.village) updatedRecord.village = formVal.village;
+      if (formVal.districtId && formVal.talukId && formVal.villageId) {
+        updatedRecord.locationHierarchy = {
+          districtId: formVal.districtId,
+          districtName: formVal.district,
+          talukId: formVal.talukId,
+          talukName: formVal.taluk,
+          villageId: formVal.villageId,
+          villageName: formVal.village,
+        };
       }
+    }
+    // If updating form05, sync crop name
+    if (formKey === 'form05' && formVal.crop) {
+      updatedRecord.crop = formVal.crop;
+    }
 
-      if (currentLoc) {
-        const latStr = currentLoc.coords.latitude.toFixed(6);
-        const lngStr = currentLoc.coords.longitude.toFixed(6);
-        const altStr = currentLoc.coords.altitude ? currentLoc.coords.altitude.toFixed(1) : '662.4';
-        const accStr = currentLoc.coords.accuracy ? currentLoc.coords.accuracy.toFixed(1) : '3.0';
+    updateSurvey(updatedRecord);
+  };
 
-        setGpsLat(latStr);
-        setGpsLng(lngStr);
-        setAltitude(altStr);
-        Alert.alert('Live GPS Captured', `Latitude: ${latStr}° N\nLongitude: ${lngStr}° E\nAltitude: ${altStr}m\nAccuracy: ±${accStr}m`);
-      } else {
-        Alert.alert('GPS Signal Error', 'Unable to retrieve current location coordinates. Please make sure location services are turned on.');
-      }
-    } catch (err: any) {
-      Alert.alert('Location Error', err?.message || 'An error occurred while fetching device location.');
+  // PDF Generation
+  const handleDownloadPdf = (survey: SurveyRecord) => {
+    generateAndDownloadPdf({
+      docId: `RPT-${survey.id}`,
+      farmerName: survey.farmerName,
+      farmerCode: 'FMR-REG',
+      plotRef: survey.fieldId,
+      crop: survey.crop,
+      hectares: survey.form02?.fieldAreaHa ? parseFloat(survey.form02.fieldAreaHa) : 2.5,
+      date: survey.auditedDate || survey.timeOrDate,
+      village: survey.village || survey.locationHierarchy?.villageName || 'Field Sector',
+      status: survey.status,
+      statusDetail: survey.statusDetail || '10-Module Comprehensive Field Audit',
+      ph: survey.form03?.chemicalProperties?.[0]?.value ? parseFloat(survey.form03.chemicalProperties[0].value) : undefined,
+      moisturePercent: survey.form03?.physicalProperties?.[7]?.sample1 ? parseFloat(survey.form03.physicalProperties[7].sample1) : undefined,
+      completedModules: survey.completedModules,
+      totalModules: survey.totalModules,
+      gpsCoords: survey.form02?.gpsLat && survey.form02?.gpsLng ? `${survey.form02.gpsLat}° N, ${survey.form02.gpsLng}° E` : undefined,
+      elevation: survey.form02?.altitude ? `${survey.form02.altitude}m` : undefined,
+      grossRevenue: survey.form09?.grossRevenueInr ? `₹${survey.form09.grossRevenueInr}` : undefined,
+      inputCost: survey.form09?.totalInputCostInr ? `₹${survey.form09.totalInputCostInr}` : undefined,
+      labourCost: survey.form09?.labourCostInr ? `₹${survey.form09.labourCostInr}` : undefined,
+      netIncome: survey.form09?.netIncomeInr ? `₹${survey.form09.netIncomeInr}` : undefined,
+      roiPercent: survey.form09?.techEconomics?.roiPercent ? `${survey.form09.techEconomics.roiPercent}%` : undefined
+    });
+
+    if (Platform.OS !== 'web') {
+      Alert.alert('PDF Dossier Generated', `Survey report ${survey.id} exported successfully.`);
     }
   };
 
-  const handleAddObservation = () => {
-    const newObs = {
-      id: Date.now().toString(),
-      date: obsDate,
-      stage: obsStage,
-      temp: '30°C',
-      health: 'Optimal'
-    };
-    setObservations([...observations, newObs]);
-    Alert.alert('Observation Logged', `Logged entry for ${obsStage} on ${obsDate}`);
-  };
-
-  const netIncome = Math.max(0, (parseFloat(grossRevenue) || 0) - (parseFloat(inputCost) || 0) - (parseFloat(labourCost) || 0));
-  const roiPercent = (parseFloat(inputCost) || 0) > 0 ? Math.round((netIncome / parseFloat(inputCost)) * 100) : 142;
-
+  // Render individual survey card
   const renderSurveyCard = ({ item }: { item: SurveyRecord }) => (
     <View style={styles.surveyCard}>
       <View style={styles.cardHeader}>
@@ -151,14 +305,8 @@ export default function SurveysScreen({ navigation }: any) {
           <Text style={styles.surveyId}>{item.id}</Text>
           <Text style={styles.timeText}> • {item.timeOrDate}</Text>
         </View>
-        <View style={[
-          styles.statusBadge,
-          item.status === 'Completed' ? styles.statusCompleted : styles.statusDraft
-        ]}>
-          <Text style={[
-            styles.statusText,
-            item.status === 'Completed' ? styles.statusTextCompleted : styles.statusTextDraft
-          ]}>
+        <View style={[styles.statusBadge, item.status === 'Completed' ? styles.statusCompleted : styles.statusDraft]}>
+          <Text style={[styles.statusText, item.status === 'Completed' ? styles.statusTextCompleted : styles.statusTextDraft]}>
             {item.status}
           </Text>
         </View>
@@ -166,13 +314,17 @@ export default function SurveysScreen({ navigation }: any) {
 
       <Text style={styles.farmerName}>{item.farmerName}</Text>
       <Text style={styles.details}>{item.crop} • Field #{item.fieldId}</Text>
-
-      <View style={styles.moduleTag}>
-        <Ionicons name="clipboard-outline" size={14} color={theme.colors.secondary} />
-        <Text style={styles.moduleText}>{item.moduleName || '10-Module Agron Audit'}</Text>
-      </View>
+      {item.village && (
+        <Text style={styles.locationText}>
+          <Ionicons name="location-outline" size={12} color={theme.colors.textSecondary} /> {item.village}, {item.taluk || ''}
+        </Text>
+      )}
 
       <View style={styles.actions}>
+        <TouchableOpacity style={styles.pdfBtn} onPress={() => handleDownloadPdf(item)}>
+          <Ionicons name="download-outline" size={15} color={theme.colors.primary} />
+          <Text style={styles.pdfBtnText}>PDF</Text>
+        </TouchableOpacity>
         <TouchableOpacity
           style={styles.viewBtn}
           onPress={() => {
@@ -196,14 +348,37 @@ export default function SurveysScreen({ navigation }: any) {
             {item.status === 'Completed' ? 'View Forms' : 'Continue Audit'}
           </Text>
         </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.deleteBtn}
+          onPress={() => {
+            Alert.alert(
+              'Delete Survey',
+              `Are you sure you want to delete ${item.id}?`,
+              [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                  text: 'Delete',
+                  style: 'destructive',
+                  onPress: () => deleteSurvey(item.id)
+                }
+              ]
+            );
+          }}
+        >
+          <Ionicons name="trash-outline" size={16} color={theme.colors.error} />
+        </TouchableOpacity>
       </View>
     </View>
   );
 
   return (
     <View style={styles.container}>
+      {/* Top Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Surveys & Field Audits</Text>
+        <View>
+          <Text style={styles.headerTitle}>Surveys & Field Audits</Text>
+          <Text style={styles.headerSubtitle}>10-Module Comprehensive Agricultural Survey</Text>
+        </View>
         <TouchableOpacity style={styles.addBtn} onPress={() => setIsModalOpen(true)}>
           <Ionicons name="add" size={24} color="#FFF" />
         </TouchableOpacity>
@@ -211,10 +386,10 @@ export default function SurveysScreen({ navigation }: any) {
 
       {surveys.length === 0 ? (
         <View style={styles.emptyContainer}>
-          <Ionicons name="clipboard-outline" size={48} color={theme.colors.primary} />
+          <Ionicons name="clipboard-outline" size={56} color={theme.colors.primary} />
           <Text style={styles.emptyTitle}>No Survey Dossiers Recorded</Text>
           <Text style={styles.emptySubtitle}>
-            Initiate a new 10-module survey dossier for a registered farmer or field parcel.
+            Initiate a new 10-module survey dossier with dynamic District → Taluk → Village hierarchy.
           </Text>
           <TouchableOpacity style={styles.createBtn} onPress={() => setIsModalOpen(true)}>
             <Ionicons name="add-circle-outline" size={20} color="#FFF" />
@@ -223,28 +398,47 @@ export default function SurveysScreen({ navigation }: any) {
         </View>
       ) : (
         <ScrollView contentContainerStyle={styles.content}>
-          {/* Active Survey Header */}
-          {activeSurvey && (
+          {/* Active Dossier Banner */}
+          {initializedActiveSurvey && (
             <View style={styles.activeBanner}>
               <View style={styles.activeBannerHeader}>
                 <View>
-                  <Text style={styles.activeId}>{activeSurvey.id}</Text>
-                  <Text style={styles.activeMeta}>{activeSurvey.farmerName} • {activeSurvey.crop}</Text>
+                  <Text style={styles.activeId}>{initializedActiveSurvey.id}</Text>
+                  <Text style={styles.activeMeta}>
+                    {initializedActiveSurvey.farmerName} • {initializedActiveSurvey.crop}
+                  </Text>
+                  {initializedActiveSurvey.village && (
+                    <Text style={styles.activeLocation}>
+                      📍 {initializedActiveSurvey.village}, {initializedActiveSurvey.taluk} ({initializedActiveSurvey.district})
+                    </Text>
+                  )}
                 </View>
-                <TouchableOpacity style={styles.reviewPill} onPress={() => setIsReviewing(!isReviewing)}>
-                  <Ionicons name={isReviewing ? 'close' : 'checkmark-done'} size={14} color="#FFF" />
-                  <Text style={styles.reviewPillText}>{isReviewing ? 'Exit Review' : 'Review All'}</Text>
-                </TouchableOpacity>
+                <View style={{ flexDirection: 'row', gap: 6, alignItems: 'center' }}>
+                  <TouchableOpacity
+                    style={styles.headerPdfBtn}
+                    onPress={() => handleDownloadPdf(initializedActiveSurvey)}
+                  >
+                    <Ionicons name="download-outline" size={14} color="#FFF" />
+                    <Text style={styles.headerPdfText}>PDF</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.reviewPill}
+                    onPress={() => setIsReviewing(!isReviewing)}
+                  >
+                    <Ionicons name={isReviewing ? 'close' : 'checkmark-done'} size={14} color="#FFF" />
+                    <Text style={styles.reviewPillText}>{isReviewing ? 'Exit' : 'Review'}</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
             </View>
           )}
 
           {isReviewing ? (
-            /* Review Screen */
+            /* Review & Final Submission Screen */
             <View style={styles.reviewSection}>
-              <Text style={styles.sectionHeading}>Dossier Review & Summary</Text>
+              <Text style={styles.sectionHeading}>Dossier Review & Completeness</Text>
 
-              {INITIAL_MODULES.map((mod) => (
+              {MODULE_DEFINITIONS.map((mod) => (
                 <View key={mod.id} style={styles.reviewCard}>
                   <View style={styles.reviewCardHeader}>
                     <Text style={styles.reviewCardTitle}>{mod.title}</Text>
@@ -254,32 +448,35 @@ export default function SurveysScreen({ navigation }: any) {
                         setIsReviewing(false);
                       }}
                     >
-                      <Text style={styles.editLink}>Edit</Text>
+                      <Text style={styles.editLink}>Edit Module</Text>
                     </TouchableOpacity>
                   </View>
-                  <Text style={styles.reviewText}>Status: {mod.status} • All parameters verified</Text>
+                  <Text style={styles.reviewText}>
+                    Form 0{mod.id}: Ready for inspection and verified against FIELD SURVEY FORM.docx
+                  </Text>
                 </View>
               ))}
 
               <TouchableOpacity
                 style={styles.submitDossierBtn}
                 onPress={() => {
-                  if (activeSurvey) {
-                    updateSurvey({ ...activeSurvey, status: 'Completed' });
-                    Alert.alert('Dossier Submitted', `Survey ${activeSurvey.id} has been submitted to central database.`);
+                  if (initializedActiveSurvey) {
+                    updateSurvey({ ...initializedActiveSurvey, status: 'Completed', completedModules: 10 });
+                    Alert.alert('Survey Finalized', `Survey dossier ${initializedActiveSurvey.id} is marked as Completed.`);
                     setIsReviewing(false);
                   }
                 }}
               >
                 <Ionicons name="cloud-upload" size={18} color="#FFF" />
-                <Text style={styles.submitBtnText}>Submit Completed Dossier</Text>
+                <Text style={styles.submitBtnText}>Mark Dossier as Completed</Text>
               </TouchableOpacity>
             </View>
           ) : (
-            /* 10-Module Form Step Navigation */
+            /* 10-Module Form Step Navigation & Active Form View */
             <View>
+              {/* Horizontal Module Selector */}
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.moduleScroll}>
-                {INITIAL_MODULES.map((mod) => (
+                {MODULE_DEFINITIONS.map((mod) => (
                   <TouchableOpacity
                     key={mod.id}
                     onPress={() => setActiveModuleId(mod.id)}
@@ -294,381 +491,138 @@ export default function SurveysScreen({ navigation }: any) {
                         activeModuleId === mod.id && styles.moduleChipTextActive
                       ]}
                     >
-                      Mod {mod.id}
+                      Form 0{mod.id}
                     </Text>
                   </TouchableOpacity>
                 ))}
               </ScrollView>
 
-              {/* Form Render Area */}
-              <View style={styles.formCard}>
-                <Text style={styles.formTitle}>{INITIAL_MODULES.find((m) => m.id === activeModuleId)?.title}</Text>
-
-                {/* FORM 01 — FARMER / STAKEHOLDER SURVEY */}
-                {activeModuleId === 1 && (
-                  <View style={styles.fieldGroup}>
-                    <Text style={styles.subHeading}>Form 01 — Identification & Farmer Profile</Text>
-                    <Text style={styles.label}>Farmer / Stakeholder Name</Text>
-                    <TextInput style={styles.input} value={farmerName} onChangeText={setFarmerName} placeholder="Enter farmer name" />
-                    
-                    <View style={styles.row}>
-                      <View style={styles.halfCol}>
-                        <Text style={styles.label}>Village / Sector</Text>
-                        <TextInput style={styles.input} placeholder="e.g. Huligere" />
-                      </View>
-                      <View style={styles.halfCol}>
-                        <Text style={styles.label}>Taluk / Block</Text>
-                        <TextInput style={styles.input} placeholder="e.g. Mandya" />
-                      </View>
-                    </View>
-
-                    <View style={styles.row}>
-                      <View style={styles.halfCol}>
-                        <Text style={styles.label}>District</Text>
-                        <TextInput style={styles.input} placeholder="District name" />
-                      </View>
-                      <View style={styles.halfCol}>
-                        <Text style={styles.label}>Contact Phone</Text>
-                        <TextInput style={styles.input} keyboardType="phone-pad" placeholder="Phone number" />
-                      </View>
-                    </View>
-
-                    <Text style={styles.label}>Farming Experience (Years)</Text>
-                    <TextInput style={styles.input} keyboardType="numeric" placeholder="e.g. 15" />
-
-                    <Text style={styles.label}>Farm Ownership</Text>
-                    <TextInput style={styles.input} placeholder="Owned / Leased / Both" />
-
-                    <View style={styles.row}>
-                      <View style={styles.halfCol}>
-                        <Text style={styles.label}>Irrigated Area (ha)</Text>
-                        <TextInput style={styles.input} keyboardType="numeric" placeholder="e.g. 2.5" />
-                      </View>
-                      <View style={styles.halfCol}>
-                        <Text style={styles.label}>Rainfed Area (ha)</Text>
-                        <TextInput style={styles.input} keyboardType="numeric" placeholder="e.g. 1.0" />
-                      </View>
-                    </View>
-
-                    <Text style={styles.subHeading}>Current Practices & Constraints</Text>
-                    <Text style={styles.label}>Main Irrigation Source</Text>
-                    <TextInput style={styles.input} placeholder="Borewell / Canal / Well" />
-                    <Text style={styles.label}>Farmer Priority Problem</Text>
-                    <TextInput style={styles.input} placeholder="Describe primary farming constraint" />
-                    <Text style={styles.label}>Expected Tech / Support</Text>
-                    <TextInput style={styles.input} placeholder="Desired government / tech support" />
+              {/* Form Active Container */}
+              {initializedActiveSurvey && (
+                <View style={styles.formCard}>
+                  <View style={styles.formCardHeader}>
+                    <Text style={styles.formTitle}>
+                      {MODULE_DEFINITIONS.find((m) => m.id === activeModuleId)?.title}
+                    </Text>
                   </View>
-                )}
 
-                {/* FORM 02 — FIELD SURVEY & CADASTRAL GEOMETRY */}
-                {activeModuleId === 2 && (
-                  <View style={styles.fieldGroup}>
-                    <Text style={styles.subHeading}>Form 02 — Field Identification & Geometry</Text>
-                    <Text style={styles.label}>Field ID / Plot Ref</Text>
-                    <TextInput style={styles.input} value={fieldId} onChangeText={setFieldId} placeholder="e.g. FLD-01" />
+                  {/* FORM 01 — FARMER / STAKEHOLDER */}
+                  {activeModuleId === 1 && initializedActiveSurvey.form01 && (
+                    <Form01Farmer
+                      data={initializedActiveSurvey.form01}
+                      onChange={(val) => handleUpdateForm('form01', val)}
+                    />
+                  )}
 
-                    <Text style={styles.label}>GPS Location Coordinates</Text>
-                    <View style={styles.row}>
-                      <TextInput style={[styles.input, styles.halfInput]} value={gpsLat} onChangeText={setGpsLat} placeholder="Latitude (°N)" keyboardType="numeric" />
-                      <TextInput style={[styles.input, styles.halfInput]} value={gpsLng} onChangeText={setGpsLng} placeholder="Longitude (°E)" keyboardType="numeric" />
-                    </View>
-                    <Text style={styles.label}>Altitude (MSL meters)</Text>
-                    <TextInput style={styles.input} value={altitude} onChangeText={setAltitude} placeholder="Altitude in meters" keyboardType="numeric" />
+                  {/* FORM 02 — FIELD SURVEY & GEOMETRY */}
+                  {activeModuleId === 2 && initializedActiveSurvey.form02 && (
+                    <Form02Field
+                      data={initializedActiveSurvey.form02}
+                      onChange={(val) => handleUpdateForm('form02', val)}
+                    />
+                  )}
 
-                    <TouchableOpacity style={styles.gpsBtn} onPress={handleCaptureGps}>
-                      <Ionicons name="location" size={18} color="#FFF" />
-                      <Text style={styles.gpsBtnText}>Capture Current GPS Location</Text>
+                  {/* FORM 03 — SOIL SURVEY */}
+                  {activeModuleId === 3 && initializedActiveSurvey.form03 && (
+                    <Form03Soil
+                      data={initializedActiveSurvey.form03}
+                      onChange={(val) => handleUpdateForm('form03', val)}
+                    />
+                  )}
+
+                  {/* FORM 04 — WATER SURVEY */}
+                  {activeModuleId === 4 && initializedActiveSurvey.form04 && (
+                    <Form04Water
+                      data={initializedActiveSurvey.form04}
+                      onChange={(val) => handleUpdateForm('form04', val)}
+                    />
+                  )}
+
+                  {/* FORM 05 — CROP SURVEY */}
+                  {activeModuleId === 5 && initializedActiveSurvey.form05 && (
+                    <Form05Crop
+                      data={initializedActiveSurvey.form05}
+                      onChange={(val) => handleUpdateForm('form05', val)}
+                    />
+                  )}
+
+                  {/* FORM 06 — PEST / DISEASE SURVEY */}
+                  {activeModuleId === 6 && initializedActiveSurvey.form06 && (
+                    <Form06PestDisease
+                      data={initializedActiveSurvey.form06}
+                      onChange={(val) => handleUpdateForm('form06', val)}
+                    />
+                  )}
+
+                  {/* FORM 07 — MICROCLIMATE SURVEY */}
+                  {activeModuleId === 7 && initializedActiveSurvey.form07 && (
+                    <Form07Microclimate
+                      data={initializedActiveSurvey.form07}
+                      onChange={(val) => handleUpdateForm('form07', val)}
+                    />
+                  )}
+
+                  {/* FORM 08 — EXISTING TECHNOLOGY */}
+                  {activeModuleId === 8 && initializedActiveSurvey.form08 && (
+                    <Form08Technology
+                      data={initializedActiveSurvey.form08}
+                      onChange={(val) => handleUpdateForm('form08', val)}
+                    />
+                  )}
+
+                  {/* FORM 09 — ECONOMIC SURVEY */}
+                  {activeModuleId === 9 && initializedActiveSurvey.form09 && (
+                    <Form09Economic
+                      data={initializedActiveSurvey.form09}
+                      onChange={(val) => handleUpdateForm('form09', val)}
+                    />
+                  )}
+
+                  {/* FORM 10 — TEMPORAL / CROP-CYCLE */}
+                  {activeModuleId === 10 && initializedActiveSurvey.form10 && (
+                    <Form10Temporal
+                      data={initializedActiveSurvey.form10}
+                      onChange={(val) => handleUpdateForm('form10', val)}
+                    />
+                  )}
+
+                  {/* Module Stepper Buttons */}
+                  <View style={styles.navRow}>
+                    {activeModuleId > 1 && (
+                      <TouchableOpacity
+                        style={styles.prevModuleBtn}
+                        onPress={() => setActiveModuleId(activeModuleId - 1)}
+                      >
+                        <Ionicons name="arrow-back" size={16} color={theme.colors.primary} />
+                        <Text style={styles.prevModuleText}>Form 0{activeModuleId - 1}</Text>
+                      </TouchableOpacity>
+                    )}
+                    <TouchableOpacity
+                      style={styles.saveProgressBtn}
+                      onPress={() => {
+                        Alert.alert('Saved', `Form 0${activeModuleId} data persisted to offline storage.`);
+                      }}
+                    >
+                      <Ionicons name="save-outline" size={16} color="#FFF" />
+                      <Text style={styles.saveProgressText}>Save Progress</Text>
                     </TouchableOpacity>
-
-                    <View style={styles.row}>
-                      <View style={styles.halfCol}>
-                        <Text style={styles.label}>Field Length (m)</Text>
-                        <TextInput style={styles.input} keyboardType="numeric" placeholder="Meters" />
-                      </View>
-                      <View style={styles.halfCol}>
-                        <Text style={styles.label}>Field Width (m)</Text>
-                        <TextInput style={styles.input} keyboardType="numeric" placeholder="Meters" />
-                      </View>
-                    </View>
-
-                    <View style={styles.row}>
-                      <View style={styles.halfCol}>
-                        <Text style={styles.label}>Slope (%)</Text>
-                        <TextInput style={styles.input} keyboardType="numeric" placeholder="Slope %" />
-                      </View>
-                      <View style={styles.halfCol}>
-                        <Text style={styles.label}>Slope Direction (°)</Text>
-                        <TextInput style={styles.input} keyboardType="numeric" placeholder="e.g. 90° East" />
-                      </View>
-                    </View>
-
-                    <Text style={styles.subHeading}>Soil Surface & Drainage Condition</Text>
-                    <Text style={styles.label}>Soil Erosion Level</Text>
-                    <TextInput style={styles.input} placeholder="None / Low / Medium / High" />
-                    <Text style={styles.label}>Waterlogging Risk</Text>
-                    <TextInput style={styles.input} placeholder="None / Low / Medium / High" />
-                    <Text style={styles.label}>Natural Drainage</Text>
-                    <TextInput style={styles.input} placeholder="Poor / Moderate / Good" />
+                    {activeModuleId < 10 && (
+                      <TouchableOpacity
+                        style={styles.nextModuleBtn}
+                        onPress={() => setActiveModuleId(activeModuleId + 1)}
+                      >
+                        <Text style={styles.nextModuleText}>Form 0{activeModuleId + 1}</Text>
+                        <Ionicons name="arrow-forward" size={16} color="#FFF" />
+                      </TouchableOpacity>
+                    )}
                   </View>
-                )}
-
-                {/* FORM 03 — SOIL SURVEY (PHYSICAL & CHEMICAL) */}
-                {activeModuleId === 3 && (
-                  <View style={styles.fieldGroup}>
-                    <Text style={styles.subHeading}>Form 03 — Physical & Chemical Soil Testing</Text>
-                    <Text style={styles.label}>Sample ID & Depth (cm)</Text>
-                    <View style={styles.row}>
-                      <TextInput style={[styles.input, styles.halfInput]} placeholder="Sample ID e.g. SMP-01" />
-                      <TextInput style={[styles.input, styles.halfInput]} placeholder="Depth e.g. 0-30 cm" />
-                    </View>
-
-                    <Text style={styles.label}>USDA Soil Texture Classification</Text>
-                    <TextInput style={styles.input} placeholder="e.g. Clay Loam / Sandy Clay" />
-
-                    <View style={styles.row}>
-                      <View style={styles.halfCol}>
-                        <Text style={styles.label}>Sand %</Text>
-                        <TextInput style={styles.input} keyboardType="numeric" placeholder="Sand %" />
-                      </View>
-                      <View style={styles.halfCol}>
-                        <Text style={styles.label}>Clay %</Text>
-                        <TextInput style={styles.input} keyboardType="numeric" placeholder="Clay %" />
-                      </View>
-                    </View>
-
-                    <Text style={styles.label}>Bulk Density (g/cm³)</Text>
-                    <TextInput style={styles.input} keyboardType="numeric" placeholder="e.g. 1.34" />
-
-                    <Text style={styles.subHeading}>Chemical & Nutrient Properties</Text>
-                    <View style={styles.row}>
-                      <View style={styles.halfCol}>
-                        <Text style={styles.label}>pH Level</Text>
-                        <TextInput style={styles.input} keyboardType="numeric" placeholder="e.g. 6.8" />
-                      </View>
-                      <View style={styles.halfCol}>
-                        <Text style={styles.label}>Electrical Cond (dS/m)</Text>
-                        <TextInput style={styles.input} keyboardType="numeric" placeholder="e.g. 0.42" />
-                      </View>
-                    </View>
-
-                    <View style={styles.row}>
-                      <View style={styles.halfCol}>
-                        <Text style={styles.label}>Nitrogen (N kg/ha)</Text>
-                        <TextInput style={styles.input} keyboardType="numeric" placeholder="kg/ha" />
-                      </View>
-                      <View style={styles.halfCol}>
-                        <Text style={styles.label}>Phosphorus (P kg/ha)</Text>
-                        <TextInput style={styles.input} keyboardType="numeric" placeholder="kg/ha" />
-                      </View>
-                    </View>
-
-                    <Text style={styles.label}>Potassium (K kg/ha)</Text>
-                    <TextInput style={styles.input} keyboardType="numeric" placeholder="kg/ha" />
-                  </View>
-                )}
-
-                {/* FORM 04 — WATER & HYDRAULIC SURVEY */}
-                {activeModuleId === 4 && (
-                  <View style={styles.fieldGroup}>
-                    <Text style={styles.subHeading}>Form 04 — Water Source & Hydraulic Setup</Text>
-                    <Text style={styles.label}>Water Source</Text>
-                    <TextInput style={styles.input} placeholder="Borewell / Open well / Canal / Pond / Other" />
-
-                    <View style={styles.row}>
-                      <View style={styles.halfCol}>
-                        <Text style={styles.label}>Source Depth (m)</Text>
-                        <TextInput style={styles.input} keyboardType="numeric" placeholder="Meters" />
-                      </View>
-                      <View style={styles.halfCol}>
-                        <Text style={styles.label}>Water Level (m)</Text>
-                        <TextInput style={styles.input} keyboardType="numeric" placeholder="Meters" />
-                      </View>
-                    </View>
-
-                    <View style={styles.row}>
-                      <View style={styles.halfCol}>
-                        <Text style={styles.label}>Pump Capacity (HP)</Text>
-                        <TextInput style={styles.input} keyboardType="numeric" placeholder="e.g. 7.5 HP" />
-                      </View>
-                      <View style={styles.halfCol}>
-                        <Text style={styles.label}>Discharge (L/min)</Text>
-                        <TextInput style={styles.input} keyboardType="numeric" placeholder="Liters / min" />
-                      </View>
-                    </View>
-
-                    <Text style={styles.subHeading}>Water Quality Analysis</Text>
-                    <View style={styles.row}>
-                      <View style={styles.halfCol}>
-                        <Text style={styles.label}>Water pH</Text>
-                        <TextInput style={styles.input} keyboardType="numeric" placeholder="pH" />
-                      </View>
-                      <View style={styles.halfCol}>
-                        <Text style={styles.label}>TDS (mg/L)</Text>
-                        <TextInput style={styles.input} keyboardType="numeric" placeholder="mg/L" />
-                      </View>
-                    </View>
-                  </View>
-                )}
-
-                {/* FORM 05 — CROP & PLANT POPULATION SURVEY */}
-                {activeModuleId === 5 && (
-                  <View style={styles.fieldGroup}>
-                    <Text style={styles.subHeading}>Form 05 — Crop Identification & Geometry</Text>
-                    <Text style={styles.label}>Crop & Variety / Hybrid</Text>
-                    <TextInput style={styles.input} value={crop} onChangeText={setCrop} placeholder="e.g. Sugarcane Co-86032" />
-
-                    <View style={styles.row}>
-                      <View style={styles.halfCol}>
-                        <Text style={styles.label}>Row Spacing (cm)</Text>
-                        <TextInput style={styles.input} keyboardType="numeric" placeholder="cm" />
-                      </View>
-                      <View style={styles.halfCol}>
-                        <Text style={styles.label}>Plant Spacing (cm)</Text>
-                        <TextInput style={styles.input} keyboardType="numeric" placeholder="cm" />
-                      </View>
-                    </View>
-
-                    <Text style={styles.label}>Plant Population (plants/ha)</Text>
-                    <TextInput style={styles.input} keyboardType="numeric" placeholder="e.g. 62,000" />
-
-                    <View style={styles.row}>
-                      <View style={styles.halfCol}>
-                        <Text style={styles.label}>Plant Height (cm)</Text>
-                        <TextInput style={styles.input} keyboardType="numeric" placeholder="cm" />
-                      </View>
-                      <View style={styles.halfCol}>
-                        <Text style={styles.label}>Canopy Cover (%)</Text>
-                        <TextInput style={styles.input} keyboardType="numeric" placeholder="%" />
-                      </View>
-                    </View>
-
-                    <Text style={styles.subHeading}>Yield Projections</Text>
-                    <Text style={styles.label}>Expected Yield Target (kg/ha)</Text>
-                    <TextInput style={styles.input} keyboardType="numeric" placeholder="Target kg/ha" />
-                  </View>
-                )}
-
-                {/* FORM 06 — PEST & DISEASE SPATIAL SURVEY */}
-                {activeModuleId === 6 && (
-                  <View style={styles.fieldGroup}>
-                    <Text style={styles.subHeading}>Form 06 — Pest & Disease Identification</Text>
-                    <Text style={styles.label}>Pest Common Name</Text>
-                    <TextInput style={styles.input} placeholder="e.g. Early Shoot Borer" />
-
-                    <View style={styles.row}>
-                      <View style={styles.halfCol}>
-                        <Text style={styles.label}>Incidence (%)</Text>
-                        <TextInput style={styles.input} keyboardType="numeric" placeholder="%" />
-                      </View>
-                      <View style={styles.halfCol}>
-                        <Text style={styles.label}>Severity (%)</Text>
-                        <TextInput style={styles.input} keyboardType="numeric" placeholder="%" />
-                      </View>
-                    </View>
-
-                    <Text style={styles.label}>Disease Name & Causal Organism</Text>
-                    <TextInput style={styles.input} placeholder="e.g. Red Rot (Colletotrichum)" />
-
-                    <Text style={styles.label}>Control Measure Applied</Text>
-                    <TextInput style={styles.input} placeholder="Describe current management" />
-                  </View>
-                )}
-
-                {/* FORM 07 — MICROCLIMATE & ATMOSPHERIC SURVEY */}
-                {activeModuleId === 7 && (
-                  <View style={styles.fieldGroup}>
-                    <Text style={styles.subHeading}>Form 07 — Weather & Crop Microclimate</Text>
-                    <View style={styles.row}>
-                      <View style={styles.halfCol}>
-                        <Text style={styles.label}>Air Temperature (°C)</Text>
-                        <TextInput style={styles.input} keyboardType="numeric" placeholder="°C" />
-                      </View>
-                      <View style={styles.halfCol}>
-                        <Text style={styles.label}>Relative Humidity (%)</Text>
-                        <TextInput style={styles.input} keyboardType="numeric" placeholder="%" />
-                      </View>
-                    </View>
-
-                    <View style={styles.row}>
-                      <View style={styles.halfCol}>
-                        <Text style={styles.label}>Wind Speed (m/s)</Text>
-                        <TextInput style={styles.input} keyboardType="numeric" placeholder="m/s" />
-                      </View>
-                      <View style={styles.halfCol}>
-                        <Text style={styles.label}>Solar Rad (W/m²)</Text>
-                        <TextInput style={styles.input} keyboardType="numeric" placeholder="W/m²" />
-                      </View>
-                    </View>
-
-                    <Text style={styles.label}>Canopy Temperature (°C)</Text>
-                    <TextInput style={styles.input} keyboardType="numeric" placeholder="°C" />
-                  </View>
-                )}
-
-                {/* FORM 08 — EXISTING TECHNOLOGY SURVEY */}
-                {activeModuleId === 8 && (
-                  <View style={styles.fieldGroup}>
-                    <Text style={styles.subHeading}>Form 08 — Sensors & Tech Inventory</Text>
-                    <Text style={styles.label}>Soil / Weather Sensors Present</Text>
-                    <TextInput style={styles.input} placeholder="Make / Model / Specs" />
-                    <Text style={styles.label}>Irrigation Automation Systems</Text>
-                    <TextInput style={styles.input} placeholder="Drip / Solenoids / Controller" />
-                    <Text style={styles.label}>Technology Gap Priority (1-5)</Text>
-                    <TextInput style={styles.input} placeholder="Primary tech required" />
-                  </View>
-                )}
-
-                {/* FORM 09 — ECONOMIC & FINANCIAL AUDIT */}
-                {activeModuleId === 9 && (
-                  <View style={styles.fieldGroup}>
-                    <Text style={styles.subHeading}>Form 09 — Farm Economics & Financials</Text>
-                    <Text style={styles.label}>Gross Revenue (₹ / Ha)</Text>
-                    <TextInput style={styles.input} value={grossRevenue} onChangeText={setGrossRevenue} keyboardType="numeric" placeholder="Enter revenue in ₹" />
-                    <Text style={styles.label}>Input Cost (₹ / Ha)</Text>
-                    <TextInput style={styles.input} value={inputCost} onChangeText={setInputCost} keyboardType="numeric" placeholder="Enter input cost in ₹" />
-                    <Text style={styles.label}>Labour Cost (₹ / Ha)</Text>
-                    <TextInput style={styles.input} value={labourCost} onChangeText={setLabourCost} keyboardType="numeric" placeholder="Enter labour cost in ₹" />
-                    <View style={styles.roiBox}>
-                      <Text style={styles.roiTitle}>Net Income Target: ₹ {netIncome.toLocaleString()}</Text>
-                      <Text style={styles.roiSubtitle}>Calculated ROI: {roiPercent}% over 3 cycles</Text>
-                    </View>
-                  </View>
-                )}
-
-                {/* FORM 10 — TEMPORAL / CROP-CYCLE SURVEY */}
-                {activeModuleId === 10 && (
-                  <View style={styles.fieldGroup}>
-                    <Text style={styles.subHeading}>Form 10 — Repeated Crop Observations</Text>
-                    <Text style={styles.label}>Observation Stage</Text>
-                    <TextInput style={styles.input} value={obsStage} onChangeText={setObsStage} placeholder="e.g. Tillering / Grand Growth" />
-                    <TouchableOpacity style={styles.addObsBtn} onPress={handleAddObservation}>
-                      <Ionicons name="add" size={16} color="#FFF" />
-                      <Text style={styles.addObsText}>+ Add Observation Log Entry</Text>
-                    </TouchableOpacity>
-
-                    {observations.map((item) => (
-                      <View key={item.id} style={styles.obsItem}>
-                        <Text style={styles.obsDate}>{item.date} • {item.stage}</Text>
-                        <Text style={styles.obsSub}>Temp: {item.temp} | Health: {item.health}</Text>
-                      </View>
-                    ))}
-                  </View>
-                )}
-
-                <TouchableOpacity
-                  style={styles.nextModuleBtn}
-                  onPress={() => {
-                    const next = activeModuleId < 10 ? activeModuleId + 1 : 1;
-                    setActiveModuleId(next);
-                  }}
-                >
-                  <Text style={styles.nextModuleText}>Next Module</Text>
-                  <Ionicons name="arrow-forward" size={18} color="#FFF" />
-                </TouchableOpacity>
-              </View>
+                </View>
+              )}
             </View>
           )}
 
+          {/* Dossiers List */}
+          <Text style={styles.dossiersHeading}>Survey Dossiers ({surveys.length})</Text>
           <FlatList
             data={surveys}
             keyExtractor={(item) => item.id}
@@ -678,8 +632,8 @@ export default function SurveysScreen({ navigation }: any) {
         </ScrollView>
       )}
 
-      {/* New Survey Dossier Modal */}
-      <Modal visible={isModalOpen} animationType="slide" transparent>
+      {/* NEW SURVEY DOSSIER MODAL WITH DISTRICT -> TALUK -> VILLAGE */}
+      <Modal visible={isModalOpen} animationType="slide" transparent onRequestClose={() => setIsModalOpen(false)}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
@@ -688,18 +642,42 @@ export default function SurveysScreen({ navigation }: any) {
                 <Ionicons name="close" size={24} color={theme.colors.text} />
               </TouchableOpacity>
             </View>
-            <ScrollView style={styles.form}>
-              <Text style={styles.label}>Farmer Name</Text>
-              <TextInput style={styles.input} value={farmerName} onChangeText={setFarmerName} placeholder="e.g. Ramesh Kumar" />
 
-              <Text style={styles.label}>Crop</Text>
-              <TextInput style={styles.input} value={crop} onChangeText={setCrop} placeholder="e.g. Sugarcane" />
+            <ScrollView style={styles.formScroll}>
+              <Text style={styles.label}>Farmer / Stakeholder Name *</Text>
+              <TextInput
+                style={styles.input}
+                value={newFarmerName}
+                onChangeText={setNewFarmerName}
+                placeholder="e.g. Ramesh Kumar"
+              />
+
+              <Text style={styles.label}>Main Crop *</Text>
+              <TextInput
+                style={styles.input}
+                value={newCrop}
+                onChangeText={setNewCrop}
+                placeholder="e.g. Sugarcane Co-86032"
+              />
 
               <Text style={styles.label}>Field Parcel ID (Optional)</Text>
-              <TextInput style={styles.input} value={fieldId} onChangeText={setFieldId} placeholder="e.g. FLD-01" />
+              <TextInput
+                style={styles.input}
+                value={newFieldId}
+                onChangeText={setNewFieldId}
+                placeholder="e.g. FLD-01"
+              />
 
-              <TouchableOpacity style={styles.saveBtn} onPress={handleInitSurvey}>
-                <Text style={styles.saveBtnText}>Initialize 10-Module Survey</Text>
+              {/* District -> Taluk -> Village Integrated Selector */}
+              <LocationSelector
+                title="Survey Location (District → Taluk → Village)"
+                initialSelection={newLocation}
+                onLocationChange={(loc) => setNewLocation(loc)}
+              />
+
+              <TouchableOpacity style={styles.initBtn} onPress={handleInitSurvey}>
+                <Ionicons name="checkmark-circle-outline" size={18} color="#FFF" />
+                <Text style={styles.initBtnText}>Initialize Complete 10-Module Survey</Text>
               </TouchableOpacity>
             </ScrollView>
           </View>
@@ -710,83 +688,464 @@ export default function SurveysScreen({ navigation }: any) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: theme.colors.background },
-  header: { padding: theme.spacing.m, backgroundColor: theme.colors.surface, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', elevation: 2 },
-  headerTitle: { fontSize: 20, fontWeight: 'bold', color: theme.colors.text },
-  addBtn: { backgroundColor: theme.colors.primary, width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
-  content: { padding: theme.spacing.m, paddingBottom: 130 },
-  emptyContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: theme.spacing.l, marginTop: 40 },
-  emptyTitle: { fontSize: 18, fontWeight: 'bold', color: theme.colors.text, marginTop: 12 },
-  emptySubtitle: { fontSize: 13, color: theme.colors.textSecondary, textAlign: 'center', marginTop: 6, marginBottom: 20 },
-  createBtn: { backgroundColor: theme.colors.primary, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 12, borderRadius: 12 },
-  createBtnText: { color: '#FFF', fontWeight: 'bold', fontSize: 15, marginLeft: 8 },
-  activeBanner: { backgroundColor: theme.colors.surface, padding: theme.spacing.m, borderRadius: 12, marginBottom: theme.spacing.m, elevation: 1 },
-  activeBannerHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  activeId: { fontSize: 18, fontWeight: 'bold', color: theme.colors.primary },
-  activeMeta: { fontSize: 13, color: theme.colors.textSecondary, marginTop: 2 },
-  reviewPill: { backgroundColor: theme.colors.primary, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16 },
-  reviewPillText: { color: '#FFF', fontSize: 12, fontWeight: 'bold', marginLeft: 4 },
-  reviewSection: { marginBottom: theme.spacing.m },
-  sectionHeading: { fontSize: 16, fontWeight: 'bold', color: theme.colors.text, marginBottom: theme.spacing.m },
-  reviewCard: { backgroundColor: theme.colors.surface, padding: theme.spacing.m, borderRadius: 10, marginBottom: theme.spacing.s, elevation: 1 },
-  reviewCardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
-  reviewCardTitle: { fontSize: 14, fontWeight: 'bold', color: theme.colors.text },
-  editLink: { fontSize: 12, fontWeight: 'bold', color: theme.colors.primary },
-  reviewText: { fontSize: 12, color: theme.colors.textSecondary },
-  submitDossierBtn: { backgroundColor: theme.colors.secondary, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 14, borderRadius: 12, marginTop: theme.spacing.m },
-  submitBtnText: { color: '#FFF', fontWeight: 'bold', fontSize: 16, marginLeft: 8 },
-  moduleScroll: { marginBottom: theme.spacing.m },
-  moduleChip: { backgroundColor: '#E0F2E9', paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, marginRight: 8 },
-  moduleChipActive: { backgroundColor: theme.colors.primary },
-  moduleChipText: { fontSize: 12, fontWeight: 'bold', color: theme.colors.primary },
-  moduleChipTextActive: { color: '#FFF' },
-  formCard: { backgroundColor: theme.colors.surface, padding: theme.spacing.m, borderRadius: 12, marginBottom: theme.spacing.m, elevation: 1 },
-  formTitle: { fontSize: 16, fontWeight: 'bold', color: theme.colors.primary, marginBottom: theme.spacing.m },
-  subHeading: { fontSize: 13, fontWeight: 'bold', color: theme.colors.primary, marginTop: 12, marginBottom: 8, borderBottomWidth: 1, borderBottomColor: theme.colors.border, paddingBottom: 4 },
-  fieldGroup: { marginBottom: theme.spacing.m },
-  label: { fontSize: 12, fontWeight: 'bold', color: theme.colors.textSecondary, marginBottom: 4 },
-  valueText: { fontSize: 16, fontWeight: 'bold', color: theme.colors.text, marginBottom: theme.spacing.m },
-  input: { height: 44, backgroundColor: '#F0F4F0', borderRadius: theme.borderRadius.m, paddingHorizontal: theme.spacing.m, marginBottom: theme.spacing.m, fontSize: 14, color: theme.colors.text },
-  row: { flexDirection: 'row', justifyContent: 'space-between' },
-  halfInput: { width: '48%' },
-  halfCol: { width: '48%' },
-  gpsBtn: { backgroundColor: theme.colors.secondary, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 12, borderRadius: 10 },
-  gpsBtnText: { color: '#FFF', fontWeight: 'bold', fontSize: 13, marginLeft: 6 },
-  roiBox: { backgroundColor: '#E0F2E9', padding: theme.spacing.m, borderRadius: 10, marginTop: theme.spacing.s },
-  roiTitle: { fontSize: 16, fontWeight: 'bold', color: theme.colors.primary },
-  roiSubtitle: { fontSize: 12, color: theme.colors.textSecondary, marginTop: 2 },
-  addObsBtn: { backgroundColor: theme.colors.primary, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 10, borderRadius: 8, marginBottom: theme.spacing.m },
-  addObsText: { color: '#FFF', fontWeight: 'bold', fontSize: 13, marginLeft: 4 },
-  obsItem: { backgroundColor: '#F0F4F0', padding: 10, borderRadius: 8, marginBottom: 6 },
-  obsDate: { fontSize: 13, fontWeight: 'bold', color: theme.colors.text },
-  obsSub: { fontSize: 11, color: theme.colors.textSecondary, marginTop: 2 },
-  nextModuleBtn: { backgroundColor: theme.colors.primary, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 12, borderRadius: 10, marginTop: theme.spacing.s },
-  nextModuleText: { color: '#FFF', fontWeight: 'bold', fontSize: 14, marginRight: 6 },
-  surveyCard: { backgroundColor: theme.colors.surface, borderRadius: theme.borderRadius.l, padding: theme.spacing.m, marginBottom: theme.spacing.m, elevation: 1 },
-  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: theme.spacing.s },
-  idContainer: { flexDirection: 'row', alignItems: 'center' },
-  surveyId: { fontSize: 12, fontWeight: 'bold', color: theme.colors.primary },
-  timeText: { fontSize: 12, color: theme.colors.textSecondary },
-  statusBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12 },
-  statusCompleted: { backgroundColor: '#E0F2E9' },
-  statusDraft: { backgroundColor: '#FFF3E0' },
-  statusText: { fontSize: 10, fontWeight: 'bold' },
-  statusTextCompleted: { color: theme.colors.success },
-  statusTextDraft: { color: '#F57F17' },
-  farmerName: { fontSize: 18, fontWeight: 'bold', color: theme.colors.text },
-  details: { fontSize: 13, color: theme.colors.textSecondary, marginBottom: theme.spacing.s },
-  moduleTag: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F0F4F0', alignSelf: 'flex-start', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6, marginBottom: theme.spacing.m },
-  moduleText: { fontSize: 11, color: theme.colors.textSecondary, marginLeft: 4 },
-  actions: { flexDirection: 'row', justifyContent: 'flex-end', borderTopWidth: 1, borderTopColor: theme.colors.border, paddingTop: theme.spacing.m },
-  viewBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F0F4F0', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, marginRight: theme.spacing.s },
-  viewBtnText: { fontSize: 13, fontWeight: 'bold', color: theme.colors.text, marginLeft: 4 },
-  resumeBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: theme.colors.secondary, paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8 },
-  resumeBtnText: { fontSize: 13, fontWeight: 'bold', color: '#FFF', marginLeft: 4 },
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
-  modalContent: { backgroundColor: theme.colors.surface, borderTopLeftRadius: theme.borderRadius.xl, borderTopRightRadius: theme.borderRadius.xl, height: '70%', padding: theme.spacing.m },
-  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: theme.spacing.l },
-  modalTitle: { fontSize: 18, fontWeight: 'bold' },
-  form: { flex: 1 },
-  saveBtn: { backgroundColor: theme.colors.primary, height: 48, borderRadius: theme.borderRadius.m, alignItems: 'center', justifyContent: 'center', marginTop: theme.spacing.m },
-  saveBtnText: { color: '#FFF', fontWeight: 'bold', fontSize: 16 }
+  container: {
+    flex: 1,
+    backgroundColor: theme.colors.background,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: theme.spacing.m,
+    paddingTop: theme.spacing.m,
+    paddingBottom: theme.spacing.s,
+    backgroundColor: theme.colors.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: theme.colors.text,
+  },
+  headerSubtitle: {
+    fontSize: 11,
+    color: theme.colors.textSecondary,
+    marginTop: 2,
+  },
+  addBtn: {
+    backgroundColor: theme.colors.primary,
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 3,
+  },
+  content: {
+    padding: theme.spacing.m,
+    paddingBottom: 130,
+  },
+  emptyContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 32,
+    marginTop: 60,
+  },
+  emptyTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: theme.colors.text,
+    marginTop: 16,
+  },
+  emptySubtitle: {
+    fontSize: 13,
+    color: theme.colors.textSecondary,
+    textAlign: 'center',
+    marginTop: 8,
+    marginBottom: 24,
+  },
+  createBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: theme.colors.primary,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: theme.borderRadius.m,
+  },
+  createBtnText: {
+    color: '#FFF',
+    fontWeight: 'bold',
+    fontSize: 14,
+  },
+  activeBanner: {
+    backgroundColor: theme.colors.primary,
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+    elevation: 3,
+  },
+  activeBannerHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+  activeId: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#FFF',
+  },
+  activeMeta: {
+    fontSize: 13,
+    color: '#D1FAE5',
+    marginTop: 2,
+    fontWeight: '500',
+  },
+  activeLocation: {
+    fontSize: 11,
+    color: '#A7F3D0',
+    marginTop: 4,
+  },
+  headerPdfBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 6,
+  },
+  headerPdfText: {
+    color: '#FFF',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  reviewPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: theme.colors.secondary,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 6,
+  },
+  reviewPillText: {
+    color: '#FFF',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  moduleScroll: {
+    marginBottom: 12,
+  },
+  moduleChip: {
+    backgroundColor: theme.colors.surface,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+    marginRight: 8,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  moduleChipActive: {
+    backgroundColor: theme.colors.primary,
+    borderColor: theme.colors.primary,
+  },
+  moduleChipText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: theme.colors.textSecondary,
+  },
+  moduleChipTextActive: {
+    color: '#FFF',
+  },
+  formCard: {
+    backgroundColor: theme.colors.surface,
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 20,
+    elevation: 2,
+  },
+  formCardHeader: {
+    marginBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
+    paddingBottom: 10,
+  },
+  formTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: theme.colors.text,
+  },
+  navRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 20,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#F1F5F9',
+    gap: 8,
+  },
+  prevModuleBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: theme.colors.primary,
+  },
+  prevModuleText: {
+    color: theme.colors.primary,
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  saveProgressBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    backgroundColor: theme.colors.secondary,
+    paddingVertical: 10,
+    borderRadius: 8,
+  },
+  saveProgressText: {
+    color: '#FFF',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  nextModuleBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: theme.colors.primary,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 8,
+  },
+  nextModuleText: {
+    color: '#FFF',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  dossiersHeading: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: theme.colors.text,
+    marginBottom: 10,
+    marginTop: 10,
+  },
+  surveyCard: {
+    backgroundColor: theme.colors.surface,
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    elevation: 1,
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  idContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  surveyId: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: theme.colors.text,
+  },
+  timeText: {
+    fontSize: 12,
+    color: theme.colors.textSecondary,
+  },
+  statusBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  statusCompleted: {
+    backgroundColor: '#D1FAE5',
+  },
+  statusDraft: {
+    backgroundColor: '#FEF3C7',
+  },
+  statusText: {
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  statusTextCompleted: {
+    color: '#065F46',
+  },
+  statusTextDraft: {
+    color: '#92400E',
+  },
+  farmerName: {
+    fontSize: 15,
+    fontWeight: 'bold',
+    color: theme.colors.text,
+  },
+  details: {
+    fontSize: 13,
+    color: theme.colors.textSecondary,
+    marginTop: 2,
+  },
+  locationText: {
+    fontSize: 12,
+    color: theme.colors.textSecondary,
+    marginTop: 2,
+  },
+  actions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    gap: 8,
+    marginTop: 12,
+  },
+  pdfBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: theme.colors.primary,
+  },
+  pdfBtnText: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    color: theme.colors.primary,
+  },
+  viewBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  viewBtnText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: theme.colors.text,
+  },
+  resumeBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: theme.colors.primary,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 6,
+  },
+  resumeBtnText: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    color: '#FFF',
+  },
+  deleteBtn: {
+    padding: 6,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#FCA5A5',
+  },
+  reviewSection: {
+    marginBottom: 20,
+  },
+  sectionHeading: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: theme.colors.text,
+    marginBottom: 12,
+  },
+  reviewCard: {
+    backgroundColor: theme.colors.surface,
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 8,
+    borderLeftWidth: 3,
+    borderLeftColor: theme.colors.primary,
+  },
+  reviewCardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  reviewCardTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: theme.colors.text,
+  },
+  editLink: {
+    fontSize: 12,
+    color: theme.colors.primary,
+    fontWeight: '700',
+  },
+  reviewText: {
+    fontSize: 12,
+    color: theme.colors.textSecondary,
+  },
+  submitDossierBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: theme.colors.primary,
+    paddingVertical: 14,
+    borderRadius: 10,
+    marginTop: 16,
+  },
+  submitBtnText: {
+    color: '#FFF',
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: theme.colors.surface,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 20,
+    maxHeight: '90%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: theme.colors.text,
+  },
+  formScroll: {
+    marginBottom: 20,
+  },
+  label: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: theme.colors.textSecondary,
+    marginBottom: 4,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: theme.borderRadius.s,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    marginBottom: 12,
+    fontSize: 14,
+    color: theme.colors.text,
+  },
+  initBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: theme.colors.primary,
+    paddingVertical: 14,
+    borderRadius: theme.borderRadius.m,
+    marginTop: 8,
+    marginBottom: 24,
+  },
+  initBtnText: {
+    color: '#FFF',
+    fontWeight: 'bold',
+    fontSize: 14,
+  },
 });

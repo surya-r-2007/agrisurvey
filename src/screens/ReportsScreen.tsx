@@ -14,6 +14,13 @@ export default function ReportsScreen() {
   const total = surveys.length || 1; // avoid div by 0
 
   const handleDownloadReport = (survey: any) => {
+    const allPhotos = [
+      ...(survey.photos || []),
+      ...(survey.form02?.photos || []),
+      ...(survey.form03?.photos || []),
+      ...(survey.form06?.photos || [])
+    ];
+
     generateAndDownloadPdf({
       docId: `RPT-${survey.id}`,
       farmerName: survey.farmerName || 'Registered Farmer',
@@ -21,8 +28,15 @@ export default function ReportsScreen() {
       plotRef: survey.fieldId || 'FLD-01',
       crop: survey.crop || 'Sugarcane',
       hectares: survey.hectares || 3.5,
-      date: survey.auditedDate || new Date().toLocaleDateString(),
-      status: survey.status
+      date: survey.auditedDate || survey.timeOrDate || new Date().toLocaleDateString('en-GB'),
+      village: survey.village || 'Huligere Sector',
+      status: survey.status || 'Completed',
+      statusDetail: survey.statusDetail || '10-Module Comprehensive Evaluation',
+      ph: survey.ph,
+      moisturePercent: survey.moisturePercent,
+      completedModules: survey.completedModules,
+      totalModules: survey.totalModules,
+      photos: allPhotos
     });
     if (Platform.OS !== 'web') {
       Alert.alert('Report PDF Generated', `PDF Dossier for ${survey.id} generated successfully.`);
