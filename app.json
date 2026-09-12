@@ -2,6 +2,7 @@
   "expo": {
     "name": "Agricultural Survey",
     "slug": "agrisurvey-mobile",
+    "owner": "surya-developers-team",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -12,10 +13,13 @@
     "android": {
       "package": "com.suryar.agrisurvey",
       "permissions": [
-        "ACCESS_COARSE_LOCATION",
-        "ACCESS_FINE_LOCATION",
-        "CAMERA",
-        "READ_MEDIA_IMAGES"
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.CAMERA",
+        "android.permission.READ_MEDIA_IMAGES",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.RECORD_AUDIO"
       ],
       "adaptiveIcon": {
         "foregroundImage": "./assets/icon.png",
@@ -25,11 +29,6 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    },
-    "extra": {
-      "eas": {
-        "projectId": "f0762d3e-4d47-4827-9d1a-0112d2e804c0"
-      }
     },
     "plugins": [
       "expo-font",
@@ -48,6 +47,11 @@
         }
       ],
       "expo-sharing"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "73087f80-2b16-41ed-bfc2-739a18884408"
+      }
+    }
   }
 }
